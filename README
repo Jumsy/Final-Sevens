@@ -1,8 +1,11 @@
 Final Sevens
 
-Dependancies
+Dependancies:
  Python 2.7.2
  Pygame 1.9.1
+
+To run:
+ Type 'python FinalSevens.py' on the command line. 
 
 In this game numbered blocks fall one at a time from the top of the screen.
 When three blocks in a row/column add up to 7 or 21, they are destroyed and
