@@ -46,7 +46,8 @@ pauseScreenText['main'][5] = 'Hard Mode: K'
 pauseScreenText['main'][6] = 'Random Mode: L'
 pauseScreenText['main'][7] = 'Return with any other key'
 
-#Font used for writing on the screen, blockFont used for the numbers in the blocks
+#Font used for writing on the screen
+#blockFont used for the numbers in the blocks
 Font = pygame.font.SysFont(None, 19)
 blockFont = pygame.font.SysFont(None, 40)
 
@@ -93,7 +94,7 @@ def pause_text(menu):
 
 def pause_screen(playerScore):
     """
-    Prints the players score and waits for input before continuing
+    Displays a pause screen and allows for editing the block's colors
     """
     Unpause = 0
     pause_text('main')
