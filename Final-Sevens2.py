@@ -46,7 +46,6 @@ def pause_screen(score):
             pygame.draw.rect(window, color, colorRect)
 
     pause = True
-    pygame.draw.rect(window, (240, 240, 240), (35, 160, 215, 330))
     pauseText = [ 'GAME PAUSED',
                   'A/left: Left',
                   'D/right: Right',
@@ -55,7 +54,11 @@ def pause_screen(score):
                   'Hard Mode: K',
                   'Random Mode: L',
                   'Quit: Q',
-                  'Return with any other key', ]
+                  'Return with any other key' ]
+
+    #The +1 after getting the length of pause is for the bottom line of blocks
+    rect_bottom = 35 + (len(pauseText) + 1) * 28
+    pygame.draw.rect(window, (240, 240, 240), (35, 160, 215, rect_bottom))
 
     incrementx = 50
     incrementy = 180

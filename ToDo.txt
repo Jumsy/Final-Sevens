@@ -1,0 +1,3 @@
+I'd like for the screen size to be modifiable. There are magic numbers strewn throughout this program...
+
+Initially, the changed screen size would just change the size of each row/column, but eventually I'd like it if the increased screen size actually affected the number of rows/columns and not just their size.
