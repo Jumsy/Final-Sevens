@@ -125,7 +125,7 @@ def get_block_num():
 def spawn_blocks(blockList):
     blockSize = 40
     #0: top left, -1: top right
-    for i in range(0, -2, -1):
+    for i in [-1, 0]:
         if blockList[i][0] == 0:
             new_number = get_block_num()
             blockList[i][0] = new_number

@@ -17,6 +17,10 @@ BUGS
   on top will be checked by the score function after they fall.
  *If the spawner is blocked for a moment by blocks that add up to 7 or 21
   game will still end despite those blocks being taken away.
+ *Sometimes if a block falls into a position where multiple sets of 3 can
+  be removed, more than one of the sets will be removed. I don't mind that
+  more than one set is removed at a time, I just don't like how inconsistent
+  it is.
 
 FEATURES
  *3 modes of block color:
