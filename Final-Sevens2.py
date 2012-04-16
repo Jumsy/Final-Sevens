@@ -29,7 +29,7 @@ class gd: #Global data
                (192, 192, 192),  #Silver
              ]
 
-    #A copy of the colors list for resetting it back to normal
+    #A copy of the colors list for resetting it back to normal when changed
     normalColors = list(colors)
 
 #For normal writing (like menus)
@@ -57,8 +57,8 @@ def pause_screen(score):
                   'Return with any other key' ]
 
     #The +1 after getting the length of pause is for the bottom line of blocks
-    rect_bottom = 35 + (len(pauseText) + 1) * 28
-    pygame.draw.rect(window, (240, 240, 240), (35, 160, 215, rect_bottom))
+    rect_bottom = 35 + (len(pauseText) + 1) * 27
+    pygame.draw.rect(window, (240, 240, 240), (35, 170, 215, rect_bottom))
 
     incrementx = 50
     incrementy = 180
@@ -92,11 +92,13 @@ def pause_screen(score):
                     print_pause_blocks(incrementy)
                 elif event.key in [ord('k'), ord('K')]:
                     for i in range(2, len(gd.colors)):
-                        gd.colors[i] = (255, 255, 255)
+                        gd.colors[i] = gd.colors[1]
                     print_pause_blocks(incrementy)
                 elif event.key in [ord('l'), ord('L')]:
                     for i in range(2, len(gd.colors)):
-                        gd.colors[i] = (random.randrange(1, 255), random.randrange(1, 255), random.randrange(1, 255))
+                        gd.colors[i] = (random.randrange(1, 255),
+                                        random.randrange(1, 255),
+                                        random.randrange(1, 255))
                     print_pause_blocks(incrementy)
                 elif event.key in [ord('q'), ord('Q')]:
                     pygame.quit()
@@ -105,12 +107,57 @@ def pause_screen(score):
                     pause = False
         pygame.display.update()
 
+def get_block_num():
+    randNum = random.randrange(1, 101)
+    if randNum < 33:
+        return 1
+    elif randNum < 60:
+        return 2
+    elif randNum < 75:
+        return 3
+    elif randNum < 85:
+        return 4
+    elif randNum < 97:
+        return 5
+    else:
+        return 7
+
+def spawn_blocks(blockList):
+    blockSize = 40
+    #0: top left, -1: top right
+    for i in range(0, -2, -1):
+        if blockList[i][0] == 0:
+            new_number = get_block_num()
+            blockList[i][0] = new_number
+            blockList[i][1] = pygame.Rect(i * -240, 0, blockSize, blockSize)
+            text = blockFont.render(str(new_number), False,
+                                    gd.colors[0], gd.colors[new_number])
+            blockList[i][2] = text.get_rect()
+    return blockList
+
+def update_topBlock(block):
+    if block[0] == 0: return block
+
+    return block
+
+def print_blocks(blocks):
+    for block in blocks:
+        if block[0] != 0:
+            pygame.draw.rect(window, gd.colors[block[0]], block[1])
+            blockNum = blockFont.render(str(block[0]), False,
+                                        gd.colors[0], gd.colors[block[0]])
+            block[2].centerx = block[1].centerx
+            block[2].centery = block[1].centery
+            screen.blit(blockNum, block[2])
+    pygame.display.update()
 
 def main():
     moveSpeed = 4
     moveSide = 0
     score = 0
     pause_screen(score)
+
+    topBlocks = [ [0, None, None] for i in range(7) ]
     
     while True:
         for event in pygame.event.get():
@@ -136,7 +183,14 @@ def main():
         pygame.draw.line(window, gd.colors[8], (0, 40), (120, 40), 1)
         pygame.draw.line(window, gd.colors[8], (160, 40), (280, 40), 1)
 
-        pygame.display.update()
+        topBlocks = spawn_blocks(topBlocks)
+
+        for block in topBlocks:
+            block = update_topBlock(block)
+
+        allBlocks = topBlocks #+ [curBlock] + fallenBlocks
+        print_blocks(allBlocks)
+
         clock.tick(40)
 
 main()
