@@ -1,9 +1,9 @@
 #Final Sevens rewrite
-#April 13th, 2012
+#April 16th, 2012
 
 import sys
 import random
-import time
+
 import pygame
 from pygame.locals import *
 
@@ -16,8 +16,10 @@ window = pygame.display.set_mode((windowWidth, windowHeight))
 pygame.display.set_caption('Final Sevens')
 screen = pygame.display.get_surface()
 
+blockSize = 40
+
 class gd: #Global data
-    #The colors list used by the program in determining what color to draw things
+    #The colors list used by the program in determining what color to draw stuff
     colors = [ (0, 0, 0),        #Black
                (255, 255, 255), #White
                (255, 0, 0),      #Red
@@ -32,19 +34,28 @@ class gd: #Global data
     #A copy of the colors list for resetting it back to normal when changed
     normalColors = list(colors)
 
-#For normal writing (like menus)
+#For text in the pause menu
 mainFont = pygame.font.SysFont(None, 19)
-#For writing on the blocks
+#For writing on the blocks and the score value in the menu
 blockFont = pygame.font.SysFont(None, 40)
 
 def pause_screen(score):
-
+    '''
+    Prints a rectangle for the background of the menu and then
+    prints some text containing game commands and the current
+    colors in effect. Also allows for editting the current colors.
+    '''
     def print_pause_blocks(y):
+        '''
+        Prints a small block for each active color in a line
+        at the given y value
+        '''
         for i, color in enumerate(gd.colors):
             x = 50 + (i * 20)
             colorRect = pygame.Rect( x, y, 15, 15)
             pygame.draw.rect(window, color, colorRect)
 
+    bgcolor = (220, 220, 220)
     pause = True
     pauseText = [ 'GAME PAUSED',
                   'A/left: Left',
@@ -58,13 +69,13 @@ def pause_screen(score):
 
     #The +1 after getting the length of pause is for the bottom line of blocks
     rect_bottom = 35 + (len(pauseText) + 1) * 27
-    pygame.draw.rect(window, (240, 240, 240), (35, 170, 215, rect_bottom))
+    pygame.draw.rect(window, bgcolor, (35, 170, 215, rect_bottom))
 
     incrementx = 50
     incrementy = 180
 
     for line in pauseText:
-        text = mainFont.render(line, False, gd.colors[0], (240, 240, 240))
+        text = mainFont.render(line, False, gd.colors[0], bgcolor)
         textRect = text.get_rect()
         textRect.centerx = screen.get_rect().centerx
         textRect.centery = incrementy
@@ -74,7 +85,7 @@ def pause_screen(score):
     print_pause_blocks(incrementy)
 
     scoreString = 'Score: ' + str(score)
-    scoreText = blockFont.render(scoreString, False, gd.colors[0], (240, 240, 240))
+    scoreText = blockFont.render(scoreString, False, gd.colors[0], bgcolor)
     scoreTextRect = scoreText.get_rect()
     scoreTextRect.centerx, scoreTextRect.centery = screen.get_rect().centerx, 90
     screen.blit(scoreText, scoreTextRect)
@@ -108,6 +119,10 @@ def pause_screen(score):
         pygame.display.update()
 
 def get_block_num():
+    '''
+    This function is called for each block when it is created.
+    It attempts to keep a reasonable distribution of block numbers.
+    '''
     randNum = random.randrange(1, 101)
     if randNum < 33:
         return 1
@@ -123,7 +138,11 @@ def get_block_num():
         return 7
 
 def spawn_blocks(blockList):
-    blockSize = 40
+    '''
+    Take topBlocks as an argument and spawns a block in the
+    top left and/or top right of the screen if necessary.
+    Also gives a block a nudge towards the center if necessary.
+    '''
     #0: top left, -1: top right
     for i in [-1, 0]:
         if blockList[i][0] == 0:
@@ -133,10 +152,61 @@ def spawn_blocks(blockList):
             text = blockFont.render(str(new_number), False,
                                     gd.colors[0], gd.colors[new_number])
             blockList[i][2] = text.get_rect()
+
+    if blockList[3][0] == 0 and (blockList[2][0] or blockList[4][0]):
+        if random.randrange(2):
+            order = [2, 4]
+        else: order = [4, 2] 
+        windowCenter = windowWidth / 2
+        for i in order:
+            if blockList[i][0]:
+                if blockList[i][1].centerx < windowCenter:
+                    blockList[i][1].centerx += 4
+                elif blockList[i][1].centerx > windowCenter:
+                    blockList[i][1].centerx -= 4
+                blockList[3] = list(blockList[i])
+                blockList[i][0] = 0
+                break
     return blockList
 
-def update_topBlock(block):
+def check_overlap(block, dir, blockList, range=0):
+    '''
+    Checks the given blockList for a collision with the given block
+    if it moves in the given direction.
+    '''
+    directionOffset = {'left':[-blockSize, 0], 'right':[blockSize, 0],
+                       'up':[0, -blockSize], 'down':[0, blockSize]}
+    offset = directionOffset[dir]
+    checkLocX = block.centerx + offset[0]
+    checkLocY = block.centery + offset[1]
+   
+    for target in blockList:
+        if target[0] == 0: continue
+        if target[1].centerx == checkLocX and target[1].centery == checkLocY:
+            return True
+    return False
+
+def update_topBlock(block, topBlocks):
+    '''
+    Keeps all the topBlocks moving towards the center.
+    '''
     if block[0] == 0: return block
+
+    windowCenter = windowWidth / 2
+    leftBound = windowCenter - blockSize
+    rightBound = windowCenter + blockSize
+    if block[1].centerx < windowCenter and block[1].centerx != leftBound:
+        if not check_overlap(block[1], 'right', topBlocks):
+            block[1].centerx += 4
+    elif block[1].centerx > windowCenter and block[1].centerx != rightBound:
+        if not check_overlap(block[1], 'left', topBlocks):
+            block[1].centerx -= 4
+
+    if block[1].left%40 == 0:
+        topBlocks[int(block[1].left / 40)] = list(block)
+        block[0] = 0
+
+    
 
     return block
 
@@ -186,7 +256,7 @@ def main():
         topBlocks = spawn_blocks(topBlocks)
 
         for block in topBlocks:
-            block = update_topBlock(block)
+            block = update_topBlock(block, topBlocks)
 
         allBlocks = topBlocks #+ [curBlock] + fallenBlocks
         print_blocks(allBlocks)
