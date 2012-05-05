@@ -2,4 +2,10 @@ I'd like for the screen size to be modifiable. There are magic numbers strewn th
 
 Initially, the changed screen size would just change the size of each row/column, but eventually I'd like it if the increased screen size actually affected the number of rows/columns and not just their size.
 
-Make blockSize all capitals because it's a constant
+Make blockSize all capitals because it's a constant.
+ Look out for other constants too.
+
+Capital letters aren't acknowledged. If I have in the event loop something like:
+ if event.key == ord('Q'):, it won't be caught for some reason. Once I get this
+ fixed I'd like to have it so you can quit outside of the pause screen, but
+ only if you push Q. People may quit accidentally if you can quit on q also here
