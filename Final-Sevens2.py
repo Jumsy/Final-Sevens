@@ -193,6 +193,21 @@ def check_overlap(block, direction, blockList, range=0):
     checkLocX = block.centerx + offset[0]
     checkLocY = block.centery + offset[1]
 
+    if range: #We're searching topBlocks for lateral movement
+        x = (checkLocX - (checkLocX%40)) / 40
+        y = (checkLocY - (checkLocY%40)) / 40
+        validCols = [i for i,_ in enumerate(blockList)]
+        validRows = [i for i,_ in enumerate(blockList[0])]
+         
+        for offset in [-2, -1, 0]:
+            if (y + offset) not in validCols or x not in validRows:
+                continue
+            tar = blockList[y + offset][x]
+            if tar[0]:
+                if offset: return True
+                elif (block.bottom % 40) < 20: return True
+        return False
+
     if isinstance(blockList[0][0], list): #We're searching fallenBlocks
         colNum = int(block.left / 40)
         #range(13) kept returning a TypeError here.
@@ -234,8 +249,14 @@ def update_topBlock(block, topBlocks):
 def move_curBlock(block, direction, fallenBlocks):
     if block[0] == 0: return block, fallenBlocks
     windowBottom = windowHeight
+
+    if direction and not check_overlap(block[1], direction, fallenBlocks, 1):
+        if direction == 'left' and block[1].left > 0:
+            block[1].centerx -= blockSize
+        elif direction == 'right' and block[1].right < windowWidth:
+            block[1].centerx += blockSize
     
-    if block[1].bottom == windowHeight or check_overlap(block[1], 'down',
+    elif block[1].bottom == windowHeight or check_overlap(block[1], 'down',
                                                         fallenBlocks):
         x = int(block[1].left / 40)
         y = int(block[1].top / 40) - 1 #Remove one for the topBlocks line
@@ -260,7 +281,7 @@ def main():
     moveSpeed = 4
     moveSide = 0
     score = 0
-    sleepTime = 40 #Game speed
+    sleepTime = 10 #Game speed
     pause_screen(score)
 
     #7 is the number of columns, 13 is the number of rows
@@ -275,9 +296,9 @@ def main():
                 sys.exit()
             elif event.type == KEYDOWN:
                 if event.key == K_LEFT or event.key in [ord('a'), ord('A')]:
-                    moveSide = -1
+                    moveSide = 'left'
                 elif event.key == K_RIGHT or event.key in [ord('d'), ord('D')]:
-                    moveSide = 1
+                    moveSide = 'right'
                 elif event.key == K_DOWN or event.key in [ord('s'), ord('S')]:
                     sleepTime = 120
                 elif event.key in [ord('p'), ord('P')]:
@@ -299,6 +320,7 @@ def main():
             block = update_topBlock(block, topBlocks)
 
         curBlock, fallenBlocks = move_curBlock(curBlock, moveSide, fallenBlocks)
+        if moveSide: moveSide = False
 
         allBlocks = topBlocks + [curBlock]
         for blockLine in fallenBlocks: allBlocks = allBlocks + blockLine
