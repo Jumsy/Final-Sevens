@@ -3,6 +3,7 @@
 
 import sys
 import random
+from pprint import pprint
 
 import pygame
 from pygame.locals import *
@@ -18,10 +19,8 @@ screen = pygame.display.get_surface()
 
 blockSize = 40
 
-#For text in the pause menu
-mainFont = pygame.font.SysFont(None, 19)
-#For writing on the blocks and the score value in the menu
-blockFont = pygame.font.SysFont(None, 40)
+mainFont = pygame.font.SysFont(None, 19) #Pause menu text
+blockFont = pygame.font.SysFont(None, 40) #Numbers on blocks and pausemenu score
 
 class gd: #Global data
     #The colors list used by the program in determining what color to draw stuff
@@ -50,9 +49,10 @@ def pause_screen(score):
         Prints a small block for each active color in a line
         at the given y value
         '''
+        tinyBlock = blockSize * (3./8.)
         for i, color in enumerate(gd.colors):
-            x = 50 + (i * 20)
-            colorRect = pygame.Rect( x, y, 15, 15)
+            x = windowWidth * (50./280.) + (i * tinyBlock * (4./3.))
+            colorRect = pygame.Rect( x, y, tinyBlock, tinyBlock)
             pygame.draw.rect(window, color, colorRect)
 
     bgcolor = (220, 220, 220)
@@ -68,8 +68,12 @@ def pause_screen(score):
                   'Return with any other key' ]
 
     #The +1 after getting the length is for the bottom line of blocks
-    rect_bottom = 35 + (len(pauseText) + 1) * 27
-    pygame.draw.rect(window, bgcolor, (35, 170, 215, rect_bottom))
+    rowsNum = len(pauseText) + 1
+    left = windowWidth * (35./280.)
+    right = windowWidth * (170./280.)
+    top = windowHeight * (215./560.)
+    bottom = rowsNum * blockSize * (3./4.)
+    pygame.draw.rect(window, bgcolor, (left, right, top, bottom))
 
     incrementx = 50
     incrementy = 180
@@ -142,7 +146,8 @@ def spawn_blocks(blockList, curBlock):
     '''
     Take topBlocks as an argument and spawns a block in the
     top left and/or top right of the screen if necessary.
-    Also gives a block a nudge towards the center if necessary.
+    Gives a block a nudge towards the center if necessary.
+    If no curBlock exists, then one is spawned if possible
     '''
     windowCenter = windowWidth / 2
 
@@ -187,10 +192,20 @@ def check_overlap(block, direction, blockList, range=0):
     offset = directionOffset[direction]
     checkLocX = block.centerx + offset[0]
     checkLocY = block.centery + offset[1]
+
+    if isinstance(blockList[0][0], list): #We're searching fallenBlocks
+        colNum = int(block.left / 40)
+        #range(13) kept returning a TypeError here.
+        for i in [ j for j,_ in enumerate(blockList) ]:
+            tar = blockList[i][colNum]
+            if tar[0] == 0: continue
+            if tar[1].centerx == checkLocX and tar[1].centery == checkLocY:
+                return True
+        return False
    
-    for target in blockList:
-        if target[0] == 0: continue
-        if target[1].centerx == checkLocX and target[1].centery == checkLocY:
+    for tar in blockList:
+        if tar[0] == 0: continue
+        if tar[1].centerx == checkLocX and tar[1].centery == checkLocY:
             return True
     return False
 
@@ -216,54 +231,58 @@ def update_topBlock(block, topBlocks):
 
     return block
 
-def move_curBlock(block):
-    if block[0] == 0: return block
+def move_curBlock(block, direction, fallenBlocks):
+    if block[0] == 0: return block, fallenBlocks
     windowBottom = windowHeight
     
-    if block[1].bottom == windowHeight:
+    if block[1].bottom == windowHeight or check_overlap(block[1], 'down',
+                                                        fallenBlocks):
+        x = int(block[1].left / 40)
+        y = int(block[1].top / 40) - 1 #Remove one for the topBlocks line
+        fallenBlocks[y][x] = list(block)
         block[0] = 0
     else: block[1].centery += 4
 
-    return block
+    return block, fallenBlocks
 
 def print_blocks(blocks):
     for block in blocks:
-        if block[0] != 0:
-            pygame.draw.rect(window, gd.colors[block[0]], block[1])
-            blockNum = blockFont.render(str(block[0]), False,
-                                        gd.colors[0], gd.colors[block[0]])
-            block[2].centerx = block[1].centerx
-            block[2].centery = block[1].centery
-            screen.blit(blockNum, block[2])
+        if block[0] == 0: continue
+        pygame.draw.rect(window, gd.colors[block[0]], block[1])
+        blockNum = blockFont.render(str(block[0]), False,
+                                    gd.colors[0], gd.colors[block[0]])
+        block[2].centerx = block[1].centerx
+        block[2].centery = block[1].centery
+        screen.blit(blockNum, block[2])
     pygame.display.update()
 
 def main():
     moveSpeed = 4
     moveSide = 0
     score = 0
-    sleepTime = 40 #Amount of time to pause between game loops
+    sleepTime = 40 #Game speed
     pause_screen(score)
 
     #7 is the number of columns, 13 is the number of rows
     topBlocks = [ [0, None, None] for i in range(7) ]
     curBlock = [0, None, None]
-    fallenBlocks = [ [0, None, None] for i in range(7) for j in range(13) ]
+    fallenBlocks = [ [ [0, None, None] for i in range(7) ] for j in range(13) ]
     
     while True:
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
-            if event.type == KEYDOWN:
+            elif event.type == KEYDOWN:
                 if event.key == K_LEFT or event.key in [ord('a'), ord('A')]:
-                    pass
-                if event.key == K_RIGHT or event.key in [ord('d'), ord('D')]:
-                    pass
-                if event.key == K_DOWN or event.key in [ord('s'), ord('S')]:
-                    sleepTime = 100
-                if event.key in [ord('p'), ord('P')]:
+                    moveSide = -1
+                elif event.key == K_RIGHT or event.key in [ord('d'), ord('D')]:
+                    moveSide = 1
+                elif event.key == K_DOWN or event.key in [ord('s'), ord('S')]:
+                    sleepTime = 120
+                elif event.key in [ord('p'), ord('P')]:
                     pause_screen(score)
-            if event.type == KEYUP:
+            elif event.type == KEYUP:
                 if event.key == K_DOWN or event.key in [ord('s'), ord('S')]:
                     sleepTime = 40
 
@@ -279,9 +298,10 @@ def main():
         for block in topBlocks:
             block = update_topBlock(block, topBlocks)
 
-        curBlock = move_curBlock(curBlock)
+        curBlock, fallenBlocks = move_curBlock(curBlock, moveSide, fallenBlocks)
 
-        allBlocks = topBlocks + [curBlock] #+ fallenBlocks
+        allBlocks = topBlocks + [curBlock]
+        for blockLine in fallenBlocks: allBlocks = allBlocks + blockLine
         print_blocks(allBlocks)
 
         clock.tick(sleepTime)
