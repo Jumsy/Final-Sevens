@@ -304,6 +304,10 @@ def main():
         for blockLine in fallenBlocks: allBlocks = allBlocks + blockLine
         print_blocks(allBlocks)
 
+        if fallenBlocks[0][3][0] != 0: break #Game over
+
         clock.tick(sleepTime)
+
+    print("Thanks for playing!")
 
 main()
