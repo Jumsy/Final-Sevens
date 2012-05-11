@@ -1,9 +1,8 @@
 #Final Sevens rewrite
-#April 27th, 2012
+#May 6th, 2012
 
 import sys
 import random
-from pprint import pprint
 
 import pygame
 from pygame.locals import *
@@ -20,7 +19,7 @@ screen = pygame.display.get_surface()
 blockSize = 40
 
 mainFont = pygame.font.SysFont(None, 19) #Pause menu text
-blockFont = pygame.font.SysFont(None, 40) #Numbers on blocks and pausemenu score
+blockFont = pygame.font.SysFont(None, 40) #Block numbers and pause menu score
 
 class gd: #Global data
     #The colors list used by the program in determining what color to draw stuff
@@ -52,7 +51,7 @@ def pause_screen(score):
         tinyBlock = blockSize * (3./8.)
         for i, color in enumerate(gd.colors):
             x = windowWidth * (50./280.) + (i * tinyBlock * (4./3.))
-            colorRect = pygame.Rect( x, y, tinyBlock, tinyBlock)
+            colorRect = pygame.Rect(x, y, tinyBlock, tinyBlock)
             pygame.draw.rect(window, color, colorRect)
 
     bgcolor = (220, 220, 220)
@@ -86,7 +85,7 @@ def pause_screen(score):
         screen.blit(text, textRect)
         incrementy += 30
 
-    print_pause_blocks(incrementy)
+    print_pause_blocks(incrementy - windowHeight * (5./280.))
 
     scoreString = 'Score: ' + str(score)
     scoreText = blockFont.render(scoreString, False, gd.colors[0], bgcolor)
@@ -162,9 +161,8 @@ def spawn_blocks(blockList, curBlock):
             blockList[i][2] = text.get_rect()
 
     if blockList[3][0] == 0 and (blockList[2][0] or blockList[4][0]):
-        if random.randrange(2):
-            order = [2, 4]
-        else: order = [4, 2] 
+        order = [2, 4]
+        random.shuffle(order)
         for i in order:
             if blockList[i][0]:
                 if blockList[i][1].centerx < windowCenter:
@@ -182,7 +180,7 @@ def spawn_blocks(blockList, curBlock):
     
     return blockList, curBlock
 
-def check_overlap(block, direction, blockList, range=0):
+def check_overlap(block, direction, blockList, _range=0):
     '''
     Checks the given blockList for a collision with the given block
     if it moves in the given direction.
@@ -193,11 +191,11 @@ def check_overlap(block, direction, blockList, range=0):
     checkLocX = block.centerx + offset[0]
     checkLocY = block.centery + offset[1]
 
-    if range: #We're searching topBlocks for lateral movement
+    if _range: #We're searching topBlocks for lateral movement
         x = (checkLocX - (checkLocX%40)) / 40
         y = (checkLocY - (checkLocY%40)) / 40
-        validCols = [i for i,_ in enumerate(blockList)]
-        validRows = [i for i,_ in enumerate(blockList[0])]
+        validCols = [i for i in range(len(blockList))]
+        validRows = [i for i in range(len(blockList[0]))]
          
         for offset in [-2, -1, 0]:
             if (y + offset) not in validCols or x not in validRows:
@@ -211,14 +209,14 @@ def check_overlap(block, direction, blockList, range=0):
     if isinstance(blockList[0][0], list): #We're searching fallenBlocks
         colNum = int(block.left / 40)
         #range(13) kept returning a TypeError here.
-        for i in [ j for j,_ in enumerate(blockList) ]:
+        for i in list(range(len(blockList))):
             tar = blockList[i][colNum]
             if tar[0] == 0: continue
             if tar[1].centerx == checkLocX and tar[1].centery == checkLocY:
                 return True
         return False
    
-    for tar in blockList:
+    for tar in blockList: #If nothing else caught, then check topBlocks
         if tar[0] == 0: continue
         if tar[1].centerx == checkLocX and tar[1].centery == checkLocY:
             return True
@@ -281,7 +279,7 @@ def main():
     moveSpeed = 4
     moveSide = 0
     score = 0
-    sleepTime = 10 #Game speed
+    sleepTime = 40 #Game speed
     pause_screen(score)
 
     #7 is the number of columns, 13 is the number of rows
