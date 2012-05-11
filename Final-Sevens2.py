@@ -1,5 +1,4 @@
 #Final Sevens rewrite
-#May 6th, 2012
 
 import sys
 import random
@@ -279,7 +278,7 @@ def main():
     moveSpeed = 4
     moveSide = 0
     score = 0
-    sleepTime = 40 #Game speed
+    gameSpeed = 40
     pause_screen(score)
 
     #7 is the number of columns, 13 is the number of rows
@@ -298,12 +297,12 @@ def main():
                 elif event.key == K_RIGHT or event.key in [ord('d'), ord('D')]:
                     moveSide = 'right'
                 elif event.key == K_DOWN or event.key in [ord('s'), ord('S')]:
-                    sleepTime = 120
+                    gameSpeed = 120
                 elif event.key in [ord('p'), ord('P')]:
                     pause_screen(score)
             elif event.type == KEYUP:
                 if event.key == K_DOWN or event.key in [ord('s'), ord('S')]:
-                    sleepTime = 40
+                    gameSpeed = 40
 
         window.fill(gd.colors[0])
         for i in range(0, 280, 40):
@@ -326,7 +325,7 @@ def main():
 
         if fallenBlocks[0][3][0] != 0: break #Game over
 
-        clock.tick(sleepTime)
+        clock.tick(gameSpeed)
 
     print("Thanks for playing!")
 
