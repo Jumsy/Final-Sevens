@@ -155,7 +155,7 @@ def get_block_num():
 
 def spawn_blocks(topBlocks, botBlocks):
     windowCenter = WINDOWWIDTH / 2
-    curBlockCol = int(COLS/2)
+    midCol = int(COLS/2)
 
     for i in [0, -1]: #0: top left, -1: top right
         block = topBlocks[i]
@@ -182,10 +182,10 @@ def spawn_blocks(topBlocks, botBlocks):
                 topBlocks[i][0] = 0
                 break
 
-    if topBlocks[3][0] and not botBlocks[curBlockCol][0][0]:
+    if topBlocks[3][0] and not botBlocks[midCol][0][0]:
         if topBlocks[3][1].centerx == windowCenter:
             topBlocks[3][3] = 'down'
-            botBlocks[curBlockCol][0] = list(topBlocks[3])
+            botBlocks[midCol][0] = list(topBlocks[3])
             topBlocks[3][0] = 0
     
     return topBlocks, botBlocks
@@ -211,7 +211,7 @@ def move_blocks(blocks, btype):
     directionMap = {'left': [-MOVESPEED,0], 'right': [MOVESPEED,0],
                              'up':[0,-MOVESPEED], 'down':[0,MOVESPEED]}
 
-    for block in blocks:
+    for i, block in enumerate(blocks):
         if block[0] == 0 or (btype == 'top' and block[1].centerx in topStops):
             continue
 
@@ -219,11 +219,7 @@ def move_blocks(blocks, btype):
         targetx = block[1].centerx + directionMap[block[3]][0] * 10
         targety = block[1].centery + directionMap[block[3]][1] * 10
 
-        bottom = block[1].bottom
-        if check_overlap([targetx, targety], blocks) or bottom == WINDOWHEIGHT:
-            if btype == 'bot':
-                blocks[(block[1].top / BLOCKSIZE) - 1] = block[:]
-                block[0] = 0
+        if check_overlap([targetx, targety], blocks):
             continue
 
         block[1].centerx += directionMap[block[3]][0]
@@ -258,9 +254,9 @@ def main():
                 sys.exit()
             elif event.type == KEYDOWN:
                 if event.key in [K_LEFT, ord('a'), ord('A')]:
-                    moveSide = 'left'
+                    moveSide = -BLOCKSIZE
                 elif event.key in [K_RIGHT, ord('d'), ord('D')]:
-                    moveSide = 'right'
+                    moveSide = BLOCKSIZE
                 elif event.key in [K_DOWN, ord('s'), ord('S')]:
                     gameSpeed = 120
                 elif event.key in [ord('p'), ord('P')]:
@@ -271,7 +267,7 @@ def main():
                 if event.key in [K_DOWN, ord('s'), ord('S')]:
                     gameSpeed = 40
 
-        #This draws the background
+        #Draw the background
         window.fill(gd.colors[0])
         for i in range(0, 280, 40):
             pygame.draw.line(window, gd.colors[8], (i,40), (i,WINDOWHEIGHT), 1)
@@ -281,9 +277,18 @@ def main():
         #Spawn new blocks
         topBlocks, botBlocks = spawn_blocks(topBlocks, botBlocks)
 
+        #Move blocks
         topBlocks = move_blocks(topBlocks, 'top')
         for col in botBlocks:
             col = move_blocks(col, 'bot')
+
+        #Player-controlled move
+        if moveSide:
+            if botBlocks[3][0][0]:
+                targetx = botBlocks[3][0][1].centerx + moveSide
+                if targetx > 0 and targetx < WINDOWWIDTH:
+                    botBlocks[3][0][1].centerx = targetx
+            moveSide = 0
 
         #Add all the blocks to a single list which is passed to a print function
         allBlocks = topBlocks[:]
