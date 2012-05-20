@@ -153,7 +153,7 @@ def get_block_num():
     else:
         return 7
 
-def spawn_blocks(topBlocks, botBlocks):
+def spawn_blocks(topBlocks, curBlock):
     windowCenter = WINDOWWIDTH / 2
     midCol = int(COLS/2)
 
@@ -182,13 +182,13 @@ def spawn_blocks(topBlocks, botBlocks):
                 topBlocks[i][0] = 0
                 break
 
-    if topBlocks[3][0] and not botBlocks[midCol][0][0]:
+    if topBlocks[3][0] and not curBlock[0]:
         if topBlocks[3][1].centerx == windowCenter:
             topBlocks[3][3] = 'down'
-            botBlocks[midCol][0] = list(topBlocks[3])
+            curBlock = list(topBlocks[3])
             topBlocks[3][0] = 0
     
-    return topBlocks, botBlocks
+    return topBlocks, curBlock 
 
 def print_block(block):
     if block[0] == 0: return
@@ -231,13 +231,27 @@ def move_blocks(blocks, btype):
 
     return blocks
 
+def move_curBlock(curBlock, botBlocks, moveSide):
+    if not curBlock[0]:
+        return curBlock, botBlocks
+
+    if curBlock[1].bottom < WINDOWHEIGHT:
+        curBlock[1].centery += MOVESPEED
+
+    target = curBlock[1].centerx + moveSide
+    if target < WINDOWWIDTH and target > 0:
+        curBlock[1].centerx = target
+
+    return curBlock, botBlocks
+
 def setup_blocks(cols, rows):
     #Block format [number, rect, number rect, direction]
     blockf = [0, None, None, None]
     topBlocks = [ blockf[:] for i in range(cols) ]
+    curBlock = blockf[:]
     botBlocks = [ [ blockf[:] for i in range(cols) ] for j in range(rows) ]
     
-    return topBlocks, botBlocks
+    return topBlocks, curBlock, botBlocks
 
 def main():
     moveSide = 0
@@ -245,7 +259,7 @@ def main():
     gameSpeed = 40
     pause_screen(score)
 
-    topBlocks, botBlocks = setup_blocks(ROWS, COLS)
+    topBlocks, curBlock, botBlocks = setup_blocks(ROWS, COLS)
 
     while True:
         for event in pygame.event.get():
@@ -261,7 +275,8 @@ def main():
                     gameSpeed = 120
                 elif event.key in [ord('p'), ord('P')]:
                     if pause_screen(score):
-                        topBlocks, botBlocks = setup_blocks(ROWS, COLS)
+                        topBlocks, curBlock, botBlocks = setup_blocks(ROWS,
+                                                                      COLS,)
                         score = 0
             elif event.type == KEYUP:
                 if event.key in [K_DOWN, ord('s'), ord('S')]:
@@ -275,28 +290,24 @@ def main():
         pygame.draw.line(window, gd.colors[8], (160, 40), (280, 40), 1)
 
         #Spawn new blocks
-        topBlocks, botBlocks = spawn_blocks(topBlocks, botBlocks)
+        topBlocks, curBlock = spawn_blocks(topBlocks, curBlock) 
 
         #Move blocks
         topBlocks = move_blocks(topBlocks, 'top')
         for col in botBlocks:
             col = move_blocks(col, 'bot')
 
-        #Player-controlled move
-        if moveSide:
-            if botBlocks[3][0][0]:
-                targetx = botBlocks[3][0][1].centerx + moveSide
-                if targetx > 0 and targetx < WINDOWWIDTH:
-                    botBlocks[3][0][1].centerx = targetx
-            moveSide = 0
+        #Move player controlled block
+        curBlock, botBlocks = move_curBlock(curBlock, botBlocks, moveSide)
+        moveSide = 0
 
         #Add all the blocks to a single list which is passed to a print function
-        allBlocks = topBlocks[:]
+        allBlocks = topBlocks[:] + [curBlock]
         allBlocks.extend(block for line in botBlocks for block in line)
         map(print_block, allBlocks)
         pygame.display.update()
 
-        if botBlocks[3][0][0] != 0 and botBlocks[3][1][0]:
+        if botBlocks[3][0][0] != 0:
             break #Game over
 
         clock.tick(gameSpeed)
