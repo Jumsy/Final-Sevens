@@ -40,11 +40,11 @@ class gd: #Global data
     normalColors = list(colors)
 
 def pause_screen(score):
-    '''
+    """
     Prints a rectangle for the background of the menu and then
     prints some text containing game commands and the current
-    colors in effect. Also allows for editting the current colors.
-    '''
+    colors in effect. Also allows for editing the current colors.
+    """
     def print_pause_blocks(y):
         '''
         Prints a small block for each active color in a line
@@ -211,8 +211,10 @@ def move_blocks(blocks, btype):
     directionMap = {'left': [-MOVESPEED,0], 'right': [MOVESPEED,0],
                              'up':[0,-MOVESPEED], 'down':[0,MOVESPEED]}
 
-    for i, block in enumerate(blocks):
+    for block in blocks:
         if block[0] == 0 or (btype == 'top' and block[1].centerx in topStops):
+            continue
+        if btype == 'bot' and block[1].bottom >= WINDOWHEIGHT:
             continue
 
         #This assumes that the blocks are moving at 1/10 of the block's size
@@ -235,8 +237,18 @@ def move_curBlock(curBlock, botBlocks, moveSide):
     if not curBlock[0]:
         return curBlock, botBlocks
 
-    if curBlock[1].bottom < WINDOWHEIGHT:
-        curBlock[1].centery += MOVESPEED
+    row = int(curBlock[1].top / BLOCKSIZE) - 1
+    col = int(curBlock[1].left / BLOCKSIZE)
+
+    newLoc = [curBlock[1].centerx, curBlock[1].centery + BLOCKSIZE]
+    botCol = botBlocks[col]
+
+    if curBlock[1].bottom == WINDOWHEIGHT or check_overlap(newLoc, botCol):
+        botBlocks[col][row] = curBlock[:]
+        curBlock[0] = 0
+        return curBlock, botBlocks
+
+    curBlock[1].centery += MOVESPEED
 
     target = curBlock[1].centerx + moveSide
     if target < WINDOWWIDTH and target > 0:
