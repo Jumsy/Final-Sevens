@@ -199,10 +199,17 @@ def print_block(block):
     block[2].centery = block[1].centery
     screen.blit(blockNum, block[2])
 
-def check_overlap(loc, blocks):
+def check_overlap(loc, blocks, yrange=0):
+    """
+    loc is the location that is checked given in [x, y] format.
+    blocks is a list of blocks where the overlap is possible.
+    yrange is for checking for a block within a certain range.
+    """
     for block in blocks:
-        if block[0] != 0 and loc == [block[1].centerx, block[1].centery]:
-            return True
+        if block[0] != 0:
+            ydistance = abs(block[1].centery - loc[1])
+            if ydistance <= yrange and block[1].centerx == loc[0]:
+                return True
     return False
 
 def move_blocks(blocks, btype):
@@ -237,22 +244,25 @@ def move_curBlock(curBlock, botBlocks, moveSide):
     if not curBlock[0]:
         return curBlock, botBlocks
 
+    if moveSide:
+        target = curBlock[1].centerx + moveSide
+        if target > 0 and target < WINDOWWIDTH:
+            tarCol = botBlocks[int(target / BLOCKSIZE)]
+            if not check_overlap([target, curBlock[1].centery], tarCol, 35):
+                curBlock[1].centerx = target
+
     row = int(curBlock[1].top / BLOCKSIZE) - 1
     col = int(curBlock[1].left / BLOCKSIZE)
 
     newLoc = [curBlock[1].centerx, curBlock[1].centery + BLOCKSIZE]
     botCol = botBlocks[col]
 
-    if curBlock[1].bottom == WINDOWHEIGHT or check_overlap(newLoc, botCol):
+    if curBlock[1].bottom == WINDOWHEIGHT or botBlocks[col][row + 1][0]:
         botBlocks[col][row] = curBlock[:]
         curBlock[0] = 0
         return curBlock, botBlocks
 
     curBlock[1].centery += MOVESPEED
-
-    target = curBlock[1].centerx + moveSide
-    if target < WINDOWWIDTH and target > 0:
-        curBlock[1].centerx = target
 
     return curBlock, botBlocks
 
@@ -287,9 +297,9 @@ def main():
                     gameSpeed = 120
                 elif event.key in [ord('p'), ord('P')]:
                     if pause_screen(score):
+                        score = 0
                         topBlocks, curBlock, botBlocks = setup_blocks(ROWS,
                                                                       COLS,)
-                        score = 0
             elif event.type == KEYUP:
                 if event.key in [K_DOWN, ord('s'), ord('S')]:
                     gameSpeed = 40
