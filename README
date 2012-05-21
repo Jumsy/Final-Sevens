@@ -5,7 +5,7 @@ Dependancies:
  Pygame 1.9.1
 
 To run:
- Type 'python FinalSevens.py' on the command line. 
+ Type 'python Final-Sevens.py' on the command line. 
 
 In this game numbered blocks fall one at a time from the top of the screen.
 When three blocks in a row/column add up to 7 or 21, they are destroyed and
@@ -13,17 +13,16 @@ the player's score increases. The game ends when the block spawner becomes
 blocked.
 
 BUGS
- *If a block under a stack of other blocks is taken away, none of the blocks
-  on top will be checked by the score function after they fall.
  *If the spawner is blocked for a moment by blocks that add up to 7 or 21
   game will still end despite those blocks being taken away.
- *Sometimes if a block falls into a position where multiple sets of 3 can
-  be removed, more than one of the sets will be removed. I don't mind that
-  more than one set is removed at a time, I just don't like how inconsistent
-  it is.
+ *If a block from the bottom of a pile is removed, all the blocks on top
+  will disappear.
+ *Sometimes after taking away three blocks an error about a list index
+  being out of range might pop-up.
 
 FEATURES
  *3 modes of block color:
    Normal (easy) mode - blocks have basic colors
    Hard mode - blocks are all white
    Random mode - blocks are all given random colors
+ *Reset blocks during the game to restart

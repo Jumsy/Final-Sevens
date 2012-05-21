@@ -2,6 +2,7 @@
 
 import sys
 import random
+from pprint import pprint
 
 import pygame
 from pygame.locals import *
@@ -43,7 +44,8 @@ def pause_screen(score):
     """
     Prints a rectangle for the background of the menu and then
     prints some text containing game commands and the current
-    colors in effect. Also allows for editing the current colors.
+    colors in effect. Also allows for editing the current colors
+    and resetting all the blocks.
     """
     def print_pause_blocks(y):
         '''
@@ -213,15 +215,15 @@ def check_overlap(loc, blocks, yrange=0):
     return False
 
 def move_blocks(blocks, btype):
+    scoreBlock = False
     windowCenter = WINDOWWIDTH / 2
     topStops = [windowCenter, windowCenter-BLOCKSIZE, windowCenter+BLOCKSIZE]
     directionMap = {'left': [-MOVESPEED,0], 'right': [MOVESPEED,0],
-                             'up':[0,-MOVESPEED], 'down':[0,MOVESPEED]}
+                    'down':[0,MOVESPEED]}
 
     for block in blocks:
-        if block[0] == 0 or (btype == 'top' and block[1].centerx in topStops):
-            continue
-        if btype == 'bot' and block[1].bottom >= WINDOWHEIGHT:
+        if not block[0] or ((btype == 'top' and block[1].centerx in topStops)
+                       or (btype == 'bot' and block[1].bottom >= WINDOWHEIGHT)):
             continue
 
         #This assumes that the blocks are moving at 1/10 of the block's size
@@ -238,17 +240,25 @@ def move_blocks(blocks, btype):
             blocks[block[1].left / BLOCKSIZE] = block[:]
             block[0] = 0
 
-    return blocks
+        if btype == 'bot' and not bool(block[1].top % BLOCKSIZE):
+            scoreBlock = block[:]
+            row = block[1].left / BLOCKSIZE
+            col = (block[1].top / BLOCKSIZE) - 1
+            blocks[col][row] = block[:]
+            block[0] = 0
+
+    return blocks, scoreBlock
 
 def move_curBlock(curBlock, botBlocks, moveSide):
+    scoreBlock = False
     if not curBlock[0]:
-        return curBlock, botBlocks
+        return curBlock, botBlocks, scoreBlock
 
     if moveSide:
         target = curBlock[1].centerx + moveSide
         if target > 0 and target < WINDOWWIDTH:
             tarCol = botBlocks[int(target / BLOCKSIZE)]
-            if not check_overlap([target, curBlock[1].centery], tarCol, 35):
+            if not check_overlap([target, curBlock[1].centery], tarCol, 36):
                 curBlock[1].centerx = target
 
     row = int(curBlock[1].top / BLOCKSIZE) - 1
@@ -259,12 +269,55 @@ def move_curBlock(curBlock, botBlocks, moveSide):
 
     if curBlock[1].bottom == WINDOWHEIGHT or botBlocks[col][row + 1][0]:
         botBlocks[col][row] = curBlock[:]
+        scoreBlock = curBlock[:]
         curBlock[0] = 0
-        return curBlock, botBlocks
+        return curBlock, botBlocks, scoreBlock
 
     curBlock[1].centery += MOVESPEED
 
-    return curBlock, botBlocks
+    return curBlock, botBlocks, scoreBlock
+
+def score_check(botBlocks, score, newBlock):
+    col = newBlock[1].left / BLOCKSIZE
+    row = (newBlock[1].top / BLOCKSIZE) - 1
+    
+    triples = [ [[col - 2, row], [col - 1, row], [col, row]],
+                [[col - 1, row], [col, row], [col + 1, row]],
+                [[col, row], [col + 1, row], [col + 2, row]],
+                [[col, row - 2], [col, row - 1], [col, row]],
+                [[col, row - 1], [col, row], [col, row + 1]],
+                [[col, row], [col, row + 1], [col, row + 2]], ]
+
+    validRows = list(range(ROWS))
+    validCols = list(range(COLS))
+
+    validTriples = []
+
+    for triple in triples:
+        isValid = True
+        for loc in triple:
+            if loc[0] not in validCols or loc[1] not in validRows:
+                isValid = False
+                break
+        if isValid:
+            validTriples.append(triple)
+
+    for triple in validTriples:
+        blockList = []
+        scoreSum = 0
+        for loc in triple:
+            block = botBlocks[loc[0]][loc[1]]
+            if not block[0]: break
+            blockList.append(block)
+            scoreSum += block[0]
+
+        if len(blockList) == 3 and (scoreSum == 7 or scoreSum == 21):
+            score += scoreSum
+            for block in blockList:
+                print block
+                block[0] = 0
+
+    return botBlocks, score
 
 def setup_blocks(cols, rows):
     #Block format [number, rect, number rect, direction]
@@ -288,6 +341,7 @@ def main():
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
+
             elif event.type == KEYDOWN:
                 if event.key in [K_LEFT, ord('a'), ord('A')]:
                     moveSide = -BLOCKSIZE
@@ -315,13 +369,19 @@ def main():
         topBlocks, curBlock = spawn_blocks(topBlocks, curBlock) 
 
         #Move blocks
-        topBlocks = move_blocks(topBlocks, 'top')
+        topBlocks, _ = move_blocks(topBlocks, 'top')
+        scoreBlocks = []
         for col in botBlocks:
-            col = move_blocks(col, 'bot')
+            col, tmp = move_blocks(col, 'bot')
+            if tmp: scoreBlocks.append(tmp[:])
 
         #Move player controlled block
-        curBlock, botBlocks = move_curBlock(curBlock, botBlocks, moveSide)
+        curBlock, botBlocks, tmp = move_curBlock(curBlock, botBlocks, moveSide)
+        if tmp: scoreBlocks.append(tmp[:])
+
         moveSide = 0
+        for block in scoreBlocks:
+            botBlocks, score = score_check(botBlocks, score, block)
 
         #Add all the blocks to a single list which is passed to a print function
         allBlocks = topBlocks[:] + [curBlock]
