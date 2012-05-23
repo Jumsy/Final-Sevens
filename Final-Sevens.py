@@ -242,9 +242,8 @@ def move_blocks(blocks, btype):
 
         if btype == 'bot' and not bool(block[1].top % BLOCKSIZE):
             scoreBlock = block[:]
-            row = block[1].left / BLOCKSIZE
-            col = (block[1].top / BLOCKSIZE) - 1
-            blocks[col][row] = block[:]
+            row = (block[1].top / BLOCKSIZE) - 1
+            blocks[row] = block[:]
             block[0] = 0
 
     return blocks, scoreBlock
@@ -309,12 +308,12 @@ def score_check(botBlocks, score, newBlock):
             block = botBlocks[loc[0]][loc[1]]
             if not block[0]: break
             blockList.append(block)
+            if isinstance(block[0], list): print "block: ", block
             scoreSum += block[0]
 
         if len(blockList) == 3 and (scoreSum == 7 or scoreSum == 21):
             score += scoreSum
             for block in blockList:
-                print block
                 block[0] = 0
 
     return botBlocks, score

@@ -15,14 +15,10 @@ blocked.
 BUGS
  *If the spawner is blocked for a moment by blocks that add up to 7 or 21
   game will still end despite those blocks being taken away.
- *If a block from the bottom of a pile is removed, all the blocks on top
-  will disappear.
- *Sometimes after taking away three blocks an error about a list index
-  being out of range might pop-up.
 
 FEATURES
  *3 modes of block color:
    Normal (easy) mode - blocks have basic colors
    Hard mode - blocks are all white
    Random mode - blocks are all given random colors
- *Reset blocks during the game to restart
+ *Reset blocks during the game to restart (also resets score)
