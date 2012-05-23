@@ -2,27 +2,62 @@
 
 import sys
 import random
-from pprint import pprint
 
 import pygame
 from pygame.locals import *
 
-pygame.init()
+defaultWidth = 280
+defaultHeight = 560
+inputWidth, inputHeight = False, False
 
+if len(sys.argv) == 3:
+    try:
+        inputWidth, inputHeight = int(sys.argv[1]), int(sys.argv[2])
+    except:
+        print "Arguments must be numbers for screen width/height."
+        print "Using default values:", defaultWidth, defaultHeight
+elif len(sys.argv) > 1:
+    example_1 = "'python Final-Sevens.py'"
+    example_2 = "'python Final-Sevens.py 280 560'"
+    print "I would try", example_1, "or", example_2 + '.'
+
+if inputWidth and inputHeight:
+    WINDOWWIDTH = inputWidth
+    WINDOWHEIGHT = inputHeight
+else:
+    WINDOWWIDTH = defaultWidth
+    WINDOWHEIGHT = defaultHeight
+
+MOVESPEED = int(WINDOWWIDTH / 70)
+if not MOVESPEED: sys.exit("Too small! 70 is the minimum")
+
+BLOCKSIZE = MOVESPEED * 10
+
+newWidth = False
+if WINDOWWIDTH % BLOCKSIZE:
+    WINDOWWIDTH -= WINDOWWIDTH % BLOCKSIZE
+    newWidth = WINDOWWIDTH
+if WINDOWHEIGHT % BLOCKSIZE:
+    WINDOWHEIGHT -= WINDOWHEIGHT % BLOCKSIZE
+    print "Using", WINDOWHEIGHT, "for WINDOWHEIGHT"
+
+if not (WINDOWWIDTH / BLOCKSIZE) % 2:
+    WINDOWWIDTH -= BLOCKSIZE
+    newWidth = WINDOWWIDTH
+
+if newWidth: print "Using", WINDOWWIDTH, "for WINDOWWIDTH"
+
+ROWS = WINDOWHEIGHT / BLOCKSIZE
+COLS = WINDOWWIDTH / BLOCKSIZE
+
+pygame.init()
 clock = pygame.time.Clock()
-WINDOWWIDTH = 280
-WINDOWHEIGHT = 560
 window = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
 pygame.display.set_caption('Final Sevens')
 screen = pygame.display.get_surface()
 
-BLOCKSIZE = 40
-MOVESPEED = BLOCKSIZE / 10
-ROWS = 13
-COLS = 7
-
-mainFont = pygame.font.SysFont(None, 19) #Pause menu text
-blockFont = pygame.font.SysFont(None, 40) #Block numbers and pause menu score
+mainFont = pygame.font.SysFont(None, BLOCKSIZE/2) #Pause menu text
+blockFont = pygame.font.SysFont(None, BLOCKSIZE) #Block numbers/pause menu score
 
 class gd: #Global data
     #The colors list used by the program in determining what color to draw stuff
@@ -53,8 +88,9 @@ def pause_screen(score):
         at the given y value
         '''
         tinyBlock = BLOCKSIZE * (3./8.)
+        xOffset = int(WINDOWWIDTH / 6)
         for i, color in enumerate(gd.colors):
-            x = WINDOWWIDTH * (50./280.) + (i * tinyBlock * (4./3.))
+            x = xOffset + (i * (3./4.) * (WINDOWWIDTH / len(gd.colors)))
             colorRect = pygame.Rect(x, y, tinyBlock, tinyBlock)
             pygame.draw.rect(window, color, colorRect)
 
@@ -74,14 +110,14 @@ def pause_screen(score):
 
     #The +1 after getting the length is for the bottom line of blocks
     rowsNum = len(pauseText) + 1
-    left = WINDOWWIDTH * (35./280.)
-    right = WINDOWWIDTH * (170./280.)
-    top = WINDOWHEIGHT * (215./560.)
-    bottom = rowsNum * BLOCKSIZE * (3./4.)
-    pygame.draw.rect(window, bgcolor, (left, right, top, bottom))
+    x = int(WINDOWWIDTH / 10)
+    y = int(WINDOWHEIGHT / 5)
+    horizontal = WINDOWWIDTH - (2 * x)
+    vertical = WINDOWHEIGHT - (1.2 * y)
 
-    incrementx = 50
-    incrementy = 180
+    pygame.draw.rect(window, bgcolor, (x, y, horizontal, vertical))
+
+    incrementy = y + int(WINDOWHEIGHT / 30)
 
     for line in pauseText:
         text = mainFont.render(line, False, gd.colors[0], bgcolor)
@@ -89,14 +125,15 @@ def pause_screen(score):
         textRect.centerx = screen.get_rect().centerx
         textRect.centery = incrementy
         screen.blit(text, textRect)
-        incrementy += 30
+        incrementy += int(WINDOWHEIGHT / 15)
 
     print_pause_blocks(incrementy)
 
+    y = int(WINDOWHEIGHT / 10)
     scoreString = 'Score: ' + str(score)
     scoreText = blockFont.render(scoreString, False, gd.colors[0], bgcolor)
     scoreTextRect = scoreText.get_rect()
-    scoreTextRect.centerx,scoreTextRect.centery = screen.get_rect().centerx,90
+    scoreTextRect.centerx,scoreTextRect.centery = screen.get_rect().centerx, y
     screen.blit(scoreText, scoreTextRect)
     
     while pause:
@@ -129,7 +166,8 @@ def pause_screen(score):
                     print_pause_blocks(incrementy)
                 elif event.key in [ord('q'), ord('Q')]:
                     pygame.quit()
-                    sys.exit()
+                    print "Thanks for playing!"
+                    sys.exit("Your score: " + str(score))
                 #To avoid unpausing if the user presses either shift key
                 elif event.key not in [K_LSHIFT, K_RSHIFT]:
                     pause = False
@@ -163,32 +201,37 @@ def spawn_blocks(topBlocks, curBlock):
         block = topBlocks[i]
         if block[0] == 0:
             new_number = get_block_num()
-            block[0] = new_number
-            block[1] = pygame.Rect(i * -240, 0, BLOCKSIZE, BLOCKSIZE)
             text = blockFont.render(str(new_number), False,
                                     gd.colors[0], gd.colors[new_number])
+            if i: x_location = WINDOWWIDTH - BLOCKSIZE
+            else: x_location = 0
+            block[0] = new_number
+            block[1] = pygame.Rect(x_location, 0, BLOCKSIZE, BLOCKSIZE)
             block[2] = text.get_rect()
             if i: block[3] = 'left'
             else: block[3] = 'right'
 
-    if topBlocks[3][0] == 0 and (topBlocks[2][0] or topBlocks[4][0]):
-        order = [2, 4]
+    lMid = int(COLS/2) - 1 #The column to the left of the middle column
+    rMid = int(COLS/2) + 1 #The column to the right of the middle column
+
+    if topBlocks[midCol][0] == 0 and (topBlocks[lMid][0] or topBlocks[rMid][0]):
+        order = [lMid, rMid]
         random.shuffle(order)
         for i in order:
             if topBlocks[i][0]:
                 if topBlocks[i][1].centerx < windowCenter:
-                    topBlocks[i][1].centerx += 4
+                    topBlocks[i][1].centerx += MOVESPEED
                 elif topBlocks[i][1].centerx > windowCenter:
-                    topBlocks[i][1].centerx -= 4
-                topBlocks[3] = topBlocks[i][:]
+                    topBlocks[i][1].centerx -= MOVESPEED
+                topBlocks[midCol] = topBlocks[i][:]
                 topBlocks[i][0] = 0
                 break
 
-    if topBlocks[3][0] and not curBlock[0]:
-        if topBlocks[3][1].centerx == windowCenter:
-            topBlocks[3][3] = 'down'
-            curBlock = list(topBlocks[3])
-            topBlocks[3][0] = 0
+    if topBlocks[midCol][0] and not curBlock[0]:
+        if topBlocks[midCol][1].centerx == windowCenter:
+            topBlocks[midCol][3] = 'down'
+            curBlock = list(topBlocks[midCol])
+            topBlocks[midCol][0] = 0
     
     return topBlocks, curBlock 
 
@@ -358,10 +401,14 @@ def main():
 
         #Draw the background
         window.fill(gd.colors[0])
-        for i in range(0, 280, 40):
-            pygame.draw.line(window, gd.colors[8], (i,40), (i,WINDOWHEIGHT), 1)
-        pygame.draw.line(window, gd.colors[8], (0, 40), (120, 40), 1)
-        pygame.draw.line(window, gd.colors[8], (160, 40), (280, 40), 1)
+        for i in range(0, WINDOWWIDTH, BLOCKSIZE):
+            pygame.draw.line(window, gd.colors[8], (i,BLOCKSIZE),
+                             (i,WINDOWHEIGHT), 1)
+        pygame.draw.line(window, gd.colors[8], (0, BLOCKSIZE),
+                        ((WINDOWWIDTH - BLOCKSIZE)/2, BLOCKSIZE), 1)
+        pygame.draw.line(window, gd.colors[8],
+                        ((WINDOWWIDTH + BLOCKSIZE)/2, BLOCKSIZE),
+                        (WINDOWWIDTH, BLOCKSIZE))
 
         #Spawn new blocks
         topBlocks, curBlock = spawn_blocks(topBlocks, curBlock) 
@@ -377,6 +424,7 @@ def main():
         curBlock, botBlocks, tmp = move_curBlock(curBlock, botBlocks, moveSide)
         if tmp: scoreBlocks.append(tmp[:])
 
+        #Update score and get rid of any groups totaling 7 or 21
         moveSide = 0
         for block in scoreBlocks:
             botBlocks, score = score_check(botBlocks, score, block)
@@ -387,7 +435,7 @@ def main():
         map(print_block, allBlocks)
         pygame.display.update()
 
-        if botBlocks[3][0][0] != 0:
+        if botBlocks[int(COLS/2)][0][0] != 0:
             break #Game over
 
         clock.tick(gameSpeed)

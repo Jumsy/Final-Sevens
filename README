@@ -7,6 +7,9 @@ Dependancies:
 To run:
  Type 'python Final-Sevens.py' on the command line. 
 
+ You can also use 'python Final-Sevens.py width height' where
+ width and height must be integers like 500 600.
+
 In this game numbered blocks fall one at a time from the top of the screen.
 When three blocks in a row/column add up to 7 or 21, they are destroyed and
 the player's score increases. The game ends when the block spawner becomes
@@ -15,6 +18,8 @@ blocked.
 BUGS
  *If the spawner is blocked for a moment by blocks that add up to 7 or 21
   game will still end despite those blocks being taken away.
+ *If window height is smaller than the width the large block size throws
+  things off.
 
 FEATURES
  *3 modes of block color:
@@ -22,3 +27,4 @@ FEATURES
    Hard mode - blocks are all white
    Random mode - blocks are all given random colors
  *Reset blocks during the game to restart (also resets score)
+ *Changeable screen size
