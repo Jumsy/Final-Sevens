@@ -308,7 +308,6 @@ def score_check(botBlocks, score, newBlock):
             block = botBlocks[loc[0]][loc[1]]
             if not block[0]: break
             blockList.append(block)
-            if isinstance(block[0], list): print "block: ", block
             scoreSum += block[0]
 
         if len(blockList) == 3 and (scoreSum == 7 or scoreSum == 21):
