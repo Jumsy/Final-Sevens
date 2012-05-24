@@ -28,11 +28,13 @@ else:
     WINDOWWIDTH = defaultWidth
     WINDOWHEIGHT = defaultHeight
 
+#70 Just seemed like a good number here through trial and error.
 MOVESPEED = int(WINDOWWIDTH / 70)
 if not MOVESPEED: sys.exit("Too small! 70 is the minimum")
 
 BLOCKSIZE = MOVESPEED * 10
 
+#This makes sure that the width and height are evenly divisable by BLOCKSIZE
 newWidth = False
 if WINDOWWIDTH % BLOCKSIZE:
     WINDOWWIDTH -= WINDOWWIDTH % BLOCKSIZE
@@ -41,6 +43,8 @@ if WINDOWHEIGHT % BLOCKSIZE:
     WINDOWHEIGHT -= WINDOWHEIGHT % BLOCKSIZE
     print "Using", WINDOWHEIGHT, "for WINDOWHEIGHT"
 
+#Blocks falling from the middle doesn't work with an even number
+#of columns so this will remove one colmn if necessary.
 if not (WINDOWWIDTH / BLOCKSIZE) % 2:
     WINDOWWIDTH -= BLOCKSIZE
     newWidth = WINDOWWIDTH
@@ -108,8 +112,7 @@ def pause_screen(score):
                   'Quit: Q',
                   'Return with any other key' ]
 
-    #The +1 after getting the length is for the bottom line of blocks
-    rowsNum = len(pauseText) + 1
+    #These numbers are just to get good screen ratios for the menu block
     x = int(WINDOWWIDTH / 10)
     y = int(WINDOWHEIGHT / 5)
     horizontal = WINDOWWIDTH - (2 * x)
@@ -194,6 +197,12 @@ def get_block_num():
         return 7
 
 def spawn_blocks(topBlocks, curBlock):
+    """This function will create new blocks in the top left and top right
+    if necessary and will nudge topBlocks towards the center spawning
+    column when it is open. Finally it will also move the center topBlocks
+    column to curBlock if there is a center topBlock and no curBlock.
+    """
+
     windowCenter = WINDOWWIDTH / 2
     midCol = int(COLS/2)
 
@@ -236,6 +245,8 @@ def spawn_blocks(topBlocks, curBlock):
     return topBlocks, curBlock 
 
 def print_block(block):
+    """Prints the given block to the screen
+    """
     if block[0] == 0: return
     pygame.draw.rect(window, gd.colors[block[0]], block[1])
     blockNum = blockFont.render(str(block[0]), False,
@@ -258,6 +269,20 @@ def check_overlap(loc, blocks, yrange=0):
     return False
 
 def move_blocks(blocks, btype):
+    """This function takes a list of blocks and moves them all according 
+    to their given directions. For topBlocks this will move all the blocks
+    towards the center if they haven't hit a stopping point or another block.
+    botBlocks is given to this function one column at a time and every block
+    in the column is moved downwards until they hit the bottom of the screen
+    or another block.
+    Each location in the given list represents a location on the board. When
+    a block has moved past the board location that the block's location in
+    the list references, then the block must be moved within its list.
+    If a block in botBlocks hits the bottom of the screen, then a block is
+    returned so that the score function can see if it needs to be taken
+    away.
+    """
+
     scoreBlock = False
     windowCenter = WINDOWWIDTH / 2
     topStops = [windowCenter, windowCenter-BLOCKSIZE, windowCenter+BLOCKSIZE]
@@ -292,6 +317,13 @@ def move_blocks(blocks, btype):
     return blocks, scoreBlock
 
 def move_curBlock(curBlock, botBlocks, moveSide):
+    """This function moves the player-controlled curBlock downwards until
+    it hits the bottom of the screen or another block. If the player wishes
+    to move right or left, the argument 'moveSide' will reflect the direction.
+    If the curBlock stops, then it is returned as scoreBlock so that the 
+    score function can see whether it needs to be destroyed.
+    """
+
     scoreBlock = False
     if not curBlock[0]:
         return curBlock, botBlocks, scoreBlock
@@ -320,6 +352,13 @@ def move_curBlock(curBlock, botBlocks, moveSide):
     return curBlock, botBlocks, scoreBlock
 
 def score_check(botBlocks, score, newBlock):
+    """This function takes a recently fallen block as newBlock
+    and searches botBlocks for all available triples that could
+    be made from this block. If the triple is valid and the 
+    blocks composing it add to 7 or 21, score is updated and the
+    blocks are removed.
+    """
+
     col = newBlock[1].left / BLOCKSIZE
     row = (newBlock[1].top / BLOCKSIZE) - 1
     
@@ -361,6 +400,11 @@ def score_check(botBlocks, score, newBlock):
     return botBlocks, score
 
 def setup_blocks(cols, rows):
+    """Returns the three lists of blocks with their starting values
+    In the beginning of the game this is just for initializing the
+    blocks, but later it is used to reset the game without quitting.
+    """
+
     #Block format [number, rect, number rect, direction]
     blockf = [0, None, None, None]
     topBlocks = [ blockf[:] for i in range(cols) ]

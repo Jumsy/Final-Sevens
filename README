@@ -7,8 +7,8 @@ Dependancies:
 To run:
  Type 'python Final-Sevens.py' on the command line. 
 
- You can also use 'python Final-Sevens.py width height' where
- width and height must be integers like 500 600.
+ 'python Final-Sevens.py width height' also works where
+ width and height must given as integers like 400 500'
 
 In this game numbered blocks fall one at a time from the top of the screen.
 When three blocks in a row/column add up to 7 or 21, they are destroyed and
