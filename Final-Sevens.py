@@ -332,7 +332,9 @@ def move_curBlock(curBlock, botBlocks, moveSide):
         target = curBlock[1].centerx + moveSide
         if target > 0 and target < WINDOWWIDTH:
             tarCol = botBlocks[int(target / BLOCKSIZE)]
-            if not check_overlap([target, curBlock[1].centery], tarCol, 36):
+            #The distance to check for an overlap in check_overlap()
+            dist = BLOCKSIZE - MOVESPEED
+            if not check_overlap([target, curBlock[1].centery], tarCol, dist):
                 curBlock[1].centerx = target
 
     row = int(curBlock[1].top / BLOCKSIZE) - 1

@@ -18,12 +18,6 @@ blocked.
 BUGS
  *If window height is smaller than the width the large block size throws
   things off.
- *Using 560 490 for window size (and undoubtedly others) has an error in
-  checking overlap for horizontal movement. I believe it shows when the
-  bottom of curBlock is at the same level as the top of the highest block
-  of the column curBlock is moving to. curBlock will replace the top 
-  block of the column that it is moving to instead of being placed on
-  top of that block.
 
 FEATURES
  *3 modes of block color:
