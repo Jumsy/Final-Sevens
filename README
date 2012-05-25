@@ -8,7 +8,7 @@ To run:
  Type 'python Final-Sevens.py' on the command line. 
 
  'python Final-Sevens.py width height' also works where
- width and height must given as integers like 400 500'
+ width and height must given as integers like 400 500
 
 In this game numbered blocks fall one at a time from the top of the screen.
 When three blocks in a row/column add up to 7 or 21, they are destroyed and
@@ -18,6 +18,10 @@ blocked.
 BUGS
  *If window height is smaller than the width the large block size throws
   things off.
+
+TODO
+ *Clean up code (always), but especially the beginning section where the
+  screen size is determined.
 
 FEATURES
  *3 modes of block color:
