@@ -16,10 +16,12 @@ the player's score increases. The game ends when the block spawner becomes
 blocked.
 
 BUGS
- *If the spawner is blocked for a moment by blocks that add up to 7 or 21
-  game will still end despite those blocks being taken away.
  *If window height is smaller than the width the large block size throws
   things off.
+ *Using 560 490 for window size (and undoubtedly others) has an error in
+  checking overlap for horizontal movement. I believe it shows when the
+  bottom of curBlock is at the same level as the top of the highest block
+  of the column curBlock is moving to.
 
 FEATURES
  *3 modes of block color:
