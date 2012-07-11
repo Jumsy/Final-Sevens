@@ -1,55 +1,34 @@
-#Final Sevens rewrite
+# Final Sevens rewrite
 
 import sys
 import random
+import argparse
 
 import pygame
 from pygame.locals import *
 
-defaultWidth = 280
-defaultHeight = 560
-inputWidth, inputHeight = False, False
+parser = argparse.ArgumentParser(description="""
+        A numerical tetris-like game using python and pygame.""")
+parser.add_argument('-x', '--width', type=int, default=280, help='Screen width')
+parser.add_argument('-y', '--height', type=int, default=560, help='and height')
+args = parser.parse_args()
 
-if len(sys.argv) == 3:
-    try:
-        inputWidth, inputHeight = int(sys.argv[1]), int(sys.argv[2])
-    except:
-        print "Arguments must be numbers for screen width/height."
-        print "Using default values:", defaultWidth, defaultHeight
-elif len(sys.argv) > 1:
-    example_1 = "'python Final-Sevens.py'"
-    example_2 = "'python Final-Sevens.py 280 560'"
-    print "I would try", example_1, "or", example_2 + '.'
-
-if inputWidth and inputHeight:
-    WINDOWWIDTH = inputWidth
-    WINDOWHEIGHT = inputHeight
-else:
-    WINDOWWIDTH = defaultWidth
-    WINDOWHEIGHT = defaultHeight
-
-#70 Just seemed like a good number here through trial and error.
-MOVESPEED = int(WINDOWWIDTH / 70)
+MOVESPEED = min(int(args.width/70), int(args.height/70))
 if not MOVESPEED: sys.exit("Too small! 70 is the minimum")
 
 BLOCKSIZE = MOVESPEED * 10
 
-#This makes sure that the width and height are evenly divisable by BLOCKSIZE
-newWidth = False
-if WINDOWWIDTH % BLOCKSIZE:
-    WINDOWWIDTH -= WINDOWWIDTH % BLOCKSIZE
-    newWidth = WINDOWWIDTH
-if WINDOWHEIGHT % BLOCKSIZE:
-    WINDOWHEIGHT -= WINDOWHEIGHT % BLOCKSIZE
-    print "Using", WINDOWHEIGHT, "for WINDOWHEIGHT"
+WINDOWWIDTH = args.width - args.width % BLOCKSIZE
+WINDOWHEIGHT = args.height - args.height % BLOCKSIZE
 
-#Blocks falling from the middle doesn't work with an even number
-#of columns so this will remove one colmn if necessary.
+# Blocks falling from the middle doesn't work with an even number
+# of columns so this will remove one column if necessary.
 if not (WINDOWWIDTH / BLOCKSIZE) % 2:
     WINDOWWIDTH -= BLOCKSIZE
-    newWidth = WINDOWWIDTH
 
-if newWidth: print "Using", WINDOWWIDTH, "for WINDOWWIDTH"
+# If the actual width/height deviate from the given values, say so
+if WINDOWWIDTH != args.width: print "Using %d as the width" % WINDOWWIDTH
+if WINDOWHEIGHT != args.height: print "Using %d as the height" % WINDOWHEIGHT
 
 ROWS = WINDOWHEIGHT / BLOCKSIZE
 COLS = WINDOWWIDTH / BLOCKSIZE
@@ -60,23 +39,23 @@ window = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
 pygame.display.set_caption('Final Sevens')
 screen = pygame.display.get_surface()
 
-mainFont = pygame.font.SysFont(None, BLOCKSIZE/2) #Pause menu text
-blockFont = pygame.font.SysFont(None, BLOCKSIZE) #Block numbers/pause menu score
+mainFont = pygame.font.SysFont(None, BLOCKSIZE/2) # Pause menu text
+blockFont = pygame.font.SysFont(None, BLOCKSIZE) # Block number/pause menu score
 
-class gd: #Global data
-    #The colors list used by the program in determining what color to draw stuff
-    colors = [ (0, 0, 0),        #Black
-               (255, 255, 255),  #White
-               (255, 0, 0),      #Red
-               (0, 128, 0),      #Green
-               (0, 0, 255),      #Blue
-               (255, 0, 255),    #Fuchsia
-               (255, 255, 0),    #Yellow
-               (0, 255, 0),      #Lime
-               (192, 192, 192),  #Silver
+class gd: # Global data
+    # The color list used by the program in determining what color to use
+    colors = [ (0, 0, 0),        # Black
+               (255, 255, 255),  # White
+               (255, 0, 0),      # Red
+               (0, 128, 0),      # Green
+               (0, 0, 255),      # Blue
+               (255, 0, 255),    # Fuchsia
+               (255, 255, 0),    # Yellow
+               (0, 255, 0),      # Lime
+               (192, 192, 192),  # Silver
              ]
 
-    #A copy of the colors list for resetting it back to normal when changed
+    # A copy of the colors list for resetting it back to normal when changed
     normalColors = list(colors)
 
 def pause_screen(score):
@@ -112,7 +91,7 @@ def pause_screen(score):
                   'Quit: Q',
                   'Return with any other key' ]
 
-    #These numbers are just to get good screen ratios for the menu block
+    # These numbers are just to get good screen ratios for the menu block
     x = int(WINDOWWIDTH / 10)
     y = int(WINDOWHEIGHT / 5)
     horizontal = WINDOWWIDTH - (2 * x)
@@ -169,9 +148,8 @@ def pause_screen(score):
                     print_pause_blocks(incrementy)
                 elif event.key in [ord('q'), ord('Q')]:
                     pygame.quit()
-                    print "Thanks for playing!"
                     sys.exit("Your score: " + str(score))
-                #To avoid unpausing if the user presses either shift key
+                # To avoid unpausing if the user presses either shift key
                 elif event.key not in [K_LSHIFT, K_RSHIFT]:
                     pause = False
         pygame.display.update()
@@ -206,7 +184,7 @@ def spawn_blocks(topBlocks, curBlock):
     windowCenter = WINDOWWIDTH / 2
     midCol = int(COLS/2)
 
-    for i in [0, -1]: #0: top left, -1: top right
+    for i in [0, -1]: # 0: top left, -1: top right
         block = topBlocks[i]
         if block[0] == 0:
             new_number = get_block_num()
@@ -220,8 +198,8 @@ def spawn_blocks(topBlocks, curBlock):
             if i: block[3] = 'left'
             else: block[3] = 'right'
 
-    lMid = int(COLS/2) - 1 #The column to the left of the middle column
-    rMid = int(COLS/2) + 1 #The column to the right of the middle column
+    lMid = int(COLS/2) - 1 # The column to the left of the middle column
+    rMid = int(COLS/2) + 1 # The column to the right of the middle column
 
     if topBlocks[midCol][0] == 0 and (topBlocks[lMid][0] or topBlocks[rMid][0]):
         order = [lMid, rMid]
@@ -294,7 +272,7 @@ def move_blocks(blocks, btype):
                        or (btype == 'bot' and block[1].bottom >= WINDOWHEIGHT)):
             continue
 
-        #This assumes that the blocks are moving at 1/10 of the block's size
+        # This assumes that the blocks are moving at 1/10 of the block's size
         targetx = block[1].centerx + directionMap[block[3]][0] * 10
         targety = block[1].centery + directionMap[block[3]][1] * 10
 
@@ -332,7 +310,7 @@ def move_curBlock(curBlock, botBlocks, moveSide):
         target = curBlock[1].centerx + moveSide
         if target > 0 and target < WINDOWWIDTH:
             tarCol = botBlocks[int(target / BLOCKSIZE)]
-            #The distance to check for an overlap in check_overlap()
+            # The distance to check for an overlap in check_overlap()
             dist = BLOCKSIZE - MOVESPEED
             if not check_overlap([target, curBlock[1].centery], tarCol, dist):
                 curBlock[1].centerx = target
@@ -407,7 +385,7 @@ def setup_blocks(cols, rows):
     blocks, but later it is used to reset the game without quitting.
     """
 
-    #Block format [number, rect, number rect, direction]
+    # Block format [number, rect, number rect, direction]
     blockf = [0, None, None, None]
     topBlocks = [ blockf[:] for i in range(cols) ]
     curBlock = blockf[:]
@@ -445,7 +423,7 @@ def main():
                 if event.key in [K_DOWN, ord('s'), ord('S')]:
                     gameSpeed = 40
 
-        #Draw the background
+        # Draw the background
         window.fill(gd.colors[0])
         for i in range(0, WINDOWWIDTH, BLOCKSIZE):
             pygame.draw.line(window, gd.colors[8], (i,BLOCKSIZE),
@@ -456,33 +434,33 @@ def main():
                         ((WINDOWWIDTH + BLOCKSIZE)/2, BLOCKSIZE),
                         (WINDOWWIDTH, BLOCKSIZE))
 
-        #Spawn new blocks
+        # Spawn new blocks
         topBlocks, curBlock = spawn_blocks(topBlocks, curBlock) 
 
-        #Move blocks
+        # Move blocks
         topBlocks, _ = move_blocks(topBlocks, 'top')
         scoreBlocks = []
         for col in botBlocks:
             col, tmp = move_blocks(col, 'bot')
             if tmp: scoreBlocks.append(tmp[:])
 
-        #Move player controlled block
+        # Move player controlled block
         curBlock, botBlocks, tmp = move_curBlock(curBlock, botBlocks, moveSide)
         if tmp: scoreBlocks.append(tmp[:])
 
-        #Update score and get rid of any groups totaling 7 or 21
+        # Update score and get rid of any groups totaling 7 or 21
         moveSide = 0
         for block in scoreBlocks:
             botBlocks, score = score_check(botBlocks, score, block)
 
-        #Add all the blocks to a single list which is passed to a print function
+        # Add all the blocks to one list which is passed to a print function
         allBlocks = topBlocks[:] + [curBlock]
         allBlocks.extend(block for line in botBlocks for block in line)
         map(print_block, allBlocks)
         pygame.display.update()
 
-        if botBlocks[int(COLS/2)][0][0] != 0:
-            break #Game over
+        if botBlocks[int(COLS/2)][0][0]:
+            break # Game over. A block was in the spawning area
 
         clock.tick(gameSpeed)
 

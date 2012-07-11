@@ -5,10 +5,9 @@ Dependancies:
  Pygame 1.9.1
 
 To run:
- Type 'python Final-Sevens.py' on the command line. 
-
- 'python Final-Sevens.py width height' also works where
- width and height must given as integers like 400 500
+ Type 'python Final-Sevens.py' on the command line.
+ 
+ For information on arguments use 'python Final-Sevens.py -h'
 
 In this game numbered blocks fall one at a time from the top of the screen.
 When three blocks in a row/column add up to 7 or 21, they are destroyed and
@@ -16,12 +15,14 @@ the player's score increases. The game ends when the block spawner becomes
 blocked.
 
 BUGS
- *If window height is smaller than the width the large block size throws
-  things off.
+ * Some values for the screen size can cause errors later in the program
+   It seems that the problem is caused when the y value is too small
+   relative to the x value. I should find out how small is 'too small'
+   and see why this error wasn't caught earlier.
 
 TODO
- *Clean up code (always), but especially the beginning section where the
-  screen size is determined.
+ *I could rewrite the program to avoid the use of sys.exit() and totally
+  remove the sys import.
 
 FEATURES
  *3 modes of block color:
