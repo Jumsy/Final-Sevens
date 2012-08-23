@@ -15,6 +15,7 @@ blocked.
 BUGS
 
 TODO
+ *Enable rotation of the falling block cluster
  *Add a spot on the right-side menu for displaying the next shape
  *Clean up the pause screen function
  *Remove Score from the pause screen at add in on the right-side menu
