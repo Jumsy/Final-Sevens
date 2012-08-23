@@ -6,6 +6,8 @@ import random
 import pygame
 from pygame.locals import *
 
+from Classes import Colors, Shape
+
 MOVESPEED = 2
 BLOCKSIZE = 20
 
@@ -28,35 +30,6 @@ screen = pygame.display.get_surface()
 mainFont = pygame.font.SysFont(None, BLOCKSIZE)
 # Block number/pause menu score
 blockFont = pygame.font.SysFont(None, int(BLOCKSIZE*1.4))
-
-class Colors:
-    def __init__(self):
-        # Static colors
-        self.white = (255, 255, 255)
-        self.black = (0, 0, 0)
-        self.silver = (192, 192, 192)
-
-        # The color list for mapping numbers to colors. Changes.
-        self.colors = [ (255, 255, 255),  # White
-                        (255, 0, 0),      # Red
-                        (0, 128, 0),      # Green
-                        (0, 0, 255),      # Blue
-                        (255, 0, 255),    # Fuchsia
-                        (255, 255, 0),    # Yellow
-                        (0, 255, 0),      # Lime
-                      ]
-
-        # A copy of the colors list for resetting it back to normal when changed
-        self.normalColors = list(self.colors)
-
-    def randomize(self):
-        for i in range(len(self.colors)):
-            self.colors[i] = (random.randrange(1, 256),
-                              random.randrange(1, 256),
-                              random.randrange(1, 256),)
-
-    def reset(self):
-        self.colors = self.normalColors[:]
 
 colors = Colors()
 
@@ -353,7 +326,6 @@ def setup_blocks(cols, rows):
     return curBlock, botBlocks
 
 def main():
-    moveSide = 0
     score = 0
     gameSpeed = 40
     pause_screen(score)
@@ -361,6 +333,7 @@ def main():
     curBlock, botBlocks = setup_blocks(ROWS, COLS)
 
     while True:
+        moveSide = 0
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
@@ -390,7 +363,7 @@ def main():
                             
         pygame.draw.rect(window, colors.silver, menu_dimensions)
         for i in range(0, BLOCK_AREA_WIDTH, BLOCKSIZE):
-            pygame.draw.line(window, colors.silver, (i, 0),
+            pygame.draw.line(window, colors.off_black, (i, 0),
                              (i,BLOCK_AREA_HEIGHT), 1)
 
         # Spawn new blocks
@@ -407,7 +380,6 @@ def main():
         if tmp: scoreBlocks.append(tmp[:])
 
         # Update score and get rid of any groups totaling 7 or 21
-        moveSide = 0
         for block in scoreBlocks:
             botBlocks, score = score_check(botBlocks, score, block)
 
