@@ -2,36 +2,21 @@
 
 import sys
 import random
-import argparse
 
 import pygame
 from pygame.locals import *
 
-parser = argparse.ArgumentParser(description="""
-        A numerical tetris-like game using python and pygame.""")
-parser.add_argument('-x', '--width', type=int, default=280, help='Screen width')
-parser.add_argument('-y', '--height', type=int, default=560, help='and height')
-args = parser.parse_args()
+MOVESPEED = 2
+BLOCKSIZE = 20
 
-MOVESPEED = min(int(args.width/70), int(args.height/70))
-if not MOVESPEED: sys.exit("Too small! 70 is the minimum")
+BLOCK_AREA_WIDTH = 280
+BLOCK_AREA_HEIGHT = 560
 
-BLOCKSIZE = MOVESPEED * 10
+WINDOWWIDTH = BLOCK_AREA_WIDTH + 100
+WINDOWHEIGHT = BLOCK_AREA_HEIGHT
 
-WINDOWWIDTH = args.width - args.width % BLOCKSIZE
-WINDOWHEIGHT = args.height - args.height % BLOCKSIZE
-
-# Blocks falling from the middle doesn't work with an even number
-# of columns so this will remove one column if necessary.
-if not (WINDOWWIDTH / BLOCKSIZE) % 2:
-    WINDOWWIDTH -= BLOCKSIZE
-
-# If the actual width/height deviate from the given values, say so
-if WINDOWWIDTH != args.width: print "Using %d as the width" % WINDOWWIDTH
-if WINDOWHEIGHT != args.height: print "Using %d as the height" % WINDOWHEIGHT
-
-ROWS = WINDOWHEIGHT / BLOCKSIZE
-COLS = WINDOWWIDTH / BLOCKSIZE
+ROWS = BLOCK_AREA_HEIGHT / BLOCKSIZE
+COLS = BLOCK_AREA_WIDTH / BLOCKSIZE
 
 pygame.init()
 clock = pygame.time.Clock()
@@ -39,8 +24,8 @@ window = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
 pygame.display.set_caption('Final Sevens')
 screen = pygame.display.get_surface()
 
-mainFont = pygame.font.SysFont(None, BLOCKSIZE/2) # Pause menu text
-blockFont = pygame.font.SysFont(None, BLOCKSIZE) # Block number/pause menu score
+mainFont = pygame.font.SysFont(None, BLOCKSIZE) # Pause menu text
+blockFont = pygame.font.SysFont(None, int(BLOCKSIZE*1.4)) # Block number/pause menu score
 
 class gd: # Global data
     # The color list used by the program in determining what color to use
@@ -70,7 +55,7 @@ def pause_screen(score):
         Prints a small block for each active color in a line
         at the given y value
         '''
-        tinyBlock = BLOCKSIZE * (3./8.)
+        tinyBlock = BLOCKSIZE * (3./4.)
         xOffset = int(WINDOWWIDTH / 6)
         for i, color in enumerate(gd.colors):
             x = xOffset + (i * (3./4.) * (WINDOWWIDTH / len(gd.colors)))
@@ -81,9 +66,9 @@ def pause_screen(score):
     pause = True
     reset = False
     pauseText = [ 'GAME PAUSED',
-                  'A/left: Left',
-                  'D/right: Right',
+                  'A-D/left-right: Move',
                   'S/down: Go faster',
+                  'W/up: Rotate',
                   'Toggle Reset: R',
                   'Normal Mode: J',
                   'Hard Mode: K',
@@ -174,53 +159,24 @@ def get_block_num():
     else:
         return 7
 
-def spawn_blocks(topBlocks, curBlock):
-    """This function will create new blocks in the top left and top right
-    if necessary and will nudge topBlocks towards the center spawning
-    column when it is open. Finally it will also move the center topBlocks
-    column to curBlock if there is a center topBlock and no curBlock.
+def spawn_blocks(curBlock):
+    """Creates a new curBlock if one doesn't already exist.
     """
 
-    windowCenter = WINDOWWIDTH / 2
+    windowCenter = BLOCK_AREA_WIDTH / 2
     midCol = int(COLS/2)
 
-    for i in [0, -1]: # 0: top left, -1: top right
-        block = topBlocks[i]
-        if block[0] == 0:
-            new_number = get_block_num()
-            text = blockFont.render(str(new_number), False,
-                                    gd.colors[0], gd.colors[new_number])
-            if i: x_location = WINDOWWIDTH - BLOCKSIZE
-            else: x_location = 0
-            block[0] = new_number
-            block[1] = pygame.Rect(x_location, 0, BLOCKSIZE, BLOCKSIZE)
-            block[2] = text.get_rect()
-            if i: block[3] = 'left'
-            else: block[3] = 'right'
+    if not curBlock[0]:
+        new_number = get_block_num()
+        text = blockFont.render(str(new_number), False,
+                                gd.colors[0], gd.colors[new_number])
+        x_location = midCol * BLOCKSIZE
+        curBlock[0] = new_number
+        curBlock[1] = pygame.Rect(x_location, 0, BLOCKSIZE, BLOCKSIZE)
+        curBlock[2] = text.get_rect()
+        curBlock[3] = 'down'
 
-    lMid = int(COLS/2) - 1 # The column to the left of the middle column
-    rMid = int(COLS/2) + 1 # The column to the right of the middle column
-
-    if topBlocks[midCol][0] == 0 and (topBlocks[lMid][0] or topBlocks[rMid][0]):
-        order = [lMid, rMid]
-        random.shuffle(order)
-        for i in order:
-            if topBlocks[i][0]:
-                if topBlocks[i][1].centerx < windowCenter:
-                    topBlocks[i][1].centerx += MOVESPEED
-                elif topBlocks[i][1].centerx > windowCenter:
-                    topBlocks[i][1].centerx -= MOVESPEED
-                topBlocks[midCol] = topBlocks[i][:]
-                topBlocks[i][0] = 0
-                break
-
-    if topBlocks[midCol][0] and not curBlock[0]:
-        if topBlocks[midCol][1].centerx == windowCenter:
-            topBlocks[midCol][3] = 'down'
-            curBlock = list(topBlocks[midCol])
-            topBlocks[midCol][0] = 0
-    
-    return topBlocks, curBlock 
+    return curBlock 
 
 def print_block(block):
     """Prints the given block to the screen
@@ -246,30 +202,25 @@ def check_overlap(loc, blocks, yrange=0):
                 return True
     return False
 
-def move_blocks(blocks, btype):
+def move_blocks(blocks):
     """This function takes a list of blocks and moves them all according 
-    to their given directions. For topBlocks this will move all the blocks
-    towards the center if they haven't hit a stopping point or another block.
-    botBlocks is given to this function one column at a time and every block
-    in the column is moved downwards until they hit the bottom of the screen
-    or another block.
+    to their given directions. botBlocks is given to this function one
+    column at a time and every block in the column is moved downwards until
+    they hit the bottom of the screen or another block.
     Each location in the given list represents a location on the board. When
     a block has moved past the board location that the block's location in
     the list references, then the block must be moved within its list.
     If a block in botBlocks hits the bottom of the screen, then a block is
-    returned so that the score function can see if it needs to be taken
-    away.
+    returned so that the score function can see if the block needs to be
+    taken away.
     """
 
     scoreBlock = False
-    windowCenter = WINDOWWIDTH / 2
-    topStops = [windowCenter, windowCenter-BLOCKSIZE, windowCenter+BLOCKSIZE]
-    directionMap = {'left': [-MOVESPEED,0], 'right': [MOVESPEED,0],
-                    'down':[0,MOVESPEED]}
+    windowCenter = BLOCK_AREA_WIDTH / 2
+    directionMap = {'down':[0, MOVESPEED]}
 
     for block in blocks:
-        if not block[0] or ((btype == 'top' and block[1].centerx in topStops)
-                       or (btype == 'bot' and block[1].bottom >= WINDOWHEIGHT)):
+        if not block[0] or block[1].bottom >= BLOCK_AREA_HEIGHT:
             continue
 
         # This assumes that the blocks are moving at 1/10 of the block's size
@@ -282,11 +233,7 @@ def move_blocks(blocks, btype):
         block[1].centerx += directionMap[block[3]][0]
         block[1].centery += directionMap[block[3]][1]
 
-        if btype == 'top' and not bool(block[1].left % BLOCKSIZE):
-            blocks[block[1].left / BLOCKSIZE] = block[:]
-            block[0] = 0
-
-        if btype == 'bot' and not bool(block[1].top % BLOCKSIZE):
+        if not bool(block[1].top % BLOCKSIZE):
             scoreBlock = block[:]
             row = (block[1].top / BLOCKSIZE) - 1
             blocks[row] = block[:]
@@ -308,7 +255,7 @@ def move_curBlock(curBlock, botBlocks, moveSide):
 
     if moveSide:
         target = curBlock[1].centerx + moveSide
-        if target > 0 and target < WINDOWWIDTH:
+        if target > 0 and target < BLOCK_AREA_WIDTH:
             tarCol = botBlocks[int(target / BLOCKSIZE)]
             # The distance to check for an overlap in check_overlap()
             dist = BLOCKSIZE - MOVESPEED
@@ -321,7 +268,7 @@ def move_curBlock(curBlock, botBlocks, moveSide):
     newLoc = [curBlock[1].centerx, curBlock[1].centery + BLOCKSIZE]
     botCol = botBlocks[col]
 
-    if curBlock[1].bottom == WINDOWHEIGHT or botBlocks[col][row + 1][0]:
+    if curBlock[1].bottom == BLOCK_AREA_HEIGHT or botBlocks[col][row + 1][0]:
         botBlocks[col][row] = curBlock[:]
         scoreBlock = curBlock[:]
         curBlock[0] = 0
@@ -380,18 +327,17 @@ def score_check(botBlocks, score, newBlock):
     return botBlocks, score
 
 def setup_blocks(cols, rows):
-    """Returns the three lists of blocks with their starting values
+    """Returns the two lists of blocks with their starting values
     In the beginning of the game this is just for initializing the
     blocks, but later it is used to reset the game without quitting.
     """
 
     # Block format [number, rect, number rect, direction]
     blockf = [0, None, None, None]
-    topBlocks = [ blockf[:] for i in range(cols) ]
     curBlock = blockf[:]
     botBlocks = [ [ blockf[:] for i in range(cols) ] for j in range(rows) ]
     
-    return topBlocks, curBlock, botBlocks
+    return curBlock, botBlocks
 
 def main():
     moveSide = 0
@@ -399,7 +345,7 @@ def main():
     gameSpeed = 40
     pause_screen(score)
 
-    topBlocks, curBlock, botBlocks = setup_blocks(ROWS, COLS)
+    curBlock, botBlocks = setup_blocks(ROWS, COLS)
 
     while True:
         for event in pygame.event.get():
@@ -417,31 +363,30 @@ def main():
                 elif event.key in [ord('p'), ord('P')]:
                     if pause_screen(score):
                         score = 0
-                        topBlocks, curBlock, botBlocks = setup_blocks(ROWS,
-                                                                      COLS,)
+                        curBlock, botBlocks = setup_blocks(ROWS, COLS,)
             elif event.type == KEYUP:
                 if event.key in [K_DOWN, ord('s'), ord('S')]:
                     gameSpeed = 40
 
         # Draw the background
         window.fill(gd.colors[0])
-        for i in range(0, WINDOWWIDTH, BLOCKSIZE):
-            pygame.draw.line(window, gd.colors[8], (i,BLOCKSIZE),
-                             (i,WINDOWHEIGHT), 1)
-        pygame.draw.line(window, gd.colors[8], (0, BLOCKSIZE),
-                        ((WINDOWWIDTH - BLOCKSIZE)/2, BLOCKSIZE), 1)
-        pygame.draw.line(window, gd.colors[8],
-                        ((WINDOWWIDTH + BLOCKSIZE)/2, BLOCKSIZE),
-                        (WINDOWWIDTH, BLOCKSIZE))
+        menu_dimensions = ( BLOCK_AREA_WIDTH,
+                            0,
+                            WINDOWWIDTH - BLOCK_AREA_WIDTH,
+                            WINDOWHEIGHT, )
+                            
+        pygame.draw.rect(window, gd.colors[-1], menu_dimensions)
+        for i in range(0, BLOCK_AREA_WIDTH, BLOCKSIZE):
+            pygame.draw.line(window, gd.colors[8], (i, 0),
+                             (i,BLOCK_AREA_HEIGHT), 1)
 
         # Spawn new blocks
-        topBlocks, curBlock = spawn_blocks(topBlocks, curBlock) 
+        curBlock = spawn_blocks(curBlock) 
 
         # Move blocks
-        topBlocks, _ = move_blocks(topBlocks, 'top')
         scoreBlocks = []
         for col in botBlocks:
-            col, tmp = move_blocks(col, 'bot')
+            col, tmp = move_blocks(col)
             if tmp: scoreBlocks.append(tmp[:])
 
         # Move player controlled block
@@ -454,7 +399,7 @@ def main():
             botBlocks, score = score_check(botBlocks, score, block)
 
         # Add all the blocks to one list which is passed to a print function
-        allBlocks = topBlocks[:] + [curBlock]
+        allBlocks = [curBlock]
         allBlocks.extend(block for line in botBlocks for block in line)
         map(print_block, allBlocks)
         pygame.display.update()
