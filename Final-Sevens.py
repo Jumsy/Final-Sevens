@@ -47,7 +47,7 @@ class Colors:
                       ]
 
         # A copy of the colors list for resetting it back to normal when changed
-        self.normalColors = list(colors)
+        self.normalColors = list(self.colors)
 
     def randomize(self):
         for i in range(len(self.colors)):
@@ -56,23 +56,9 @@ class Colors:
                               random.randrange(1, 256),)
 
     def reset(self):
-        self.colors = self.normalcolors[:]
+        self.colors = self.normalColors[:]
 
-class gd: # Global data
-    # The color list used by the program in determining what color to use
-    colors = [ (0, 0, 0),        # Black
-               (255, 255, 255),  # White
-               (255, 0, 0),      # Red
-               (0, 128, 0),      # Green
-               (0, 0, 255),      # Blue
-               (255, 0, 255),    # Fuchsia
-               (255, 255, 0),    # Yellow
-               (0, 255, 0),      # Lime
-               (192, 192, 192),  # Silver
-             ]
-
-    # A copy of the colors list for resetting it back to normal when changed
-    normalColors = list(colors)
+colors = Colors()
 
 def pause_screen(score):
     """
@@ -87,11 +73,11 @@ def pause_screen(score):
         at the given y value
         '''
         tinyBlock = BLOCKSIZE * (3./4.)
-        xOffset = int(WINDOWWIDTH / 6)
-        for i, color in enumerate(gd.colors):
-            x = xOffset + (i * (3./4.) * (WINDOWWIDTH / len(gd.colors)))
+        xOffset = int(WINDOWWIDTH / 15)
+        for i in [1, 2, 3, 4, 5, 7]:
+            x = xOffset + (i * (3./4.) * (WINDOWWIDTH / len(colors.colors)))
             colorRect = pygame.Rect(x, y, tinyBlock, tinyBlock)
-            pygame.draw.rect(window, color, colorRect)
+            pygame.draw.rect(window, colors.colors[i-1], colorRect)
 
     bgcolor = (220, 220, 220)
     pause = True
@@ -118,7 +104,7 @@ def pause_screen(score):
     incrementy = y + int(WINDOWHEIGHT / 30)
 
     for line in pauseText:
-        text = mainFont.render(line, False, gd.colors[0], bgcolor)
+        text = mainFont.render(line, False, colors.black, bgcolor)
         textRect = text.get_rect()
         textRect.centerx = screen.get_rect().centerx
         textRect.centery = incrementy
@@ -129,7 +115,7 @@ def pause_screen(score):
 
     y = int(WINDOWHEIGHT / 10)
     scoreString = 'Score: ' + str(score)
-    scoreText = blockFont.render(scoreString, False, gd.colors[0], bgcolor)
+    scoreText = blockFont.render(scoreString, False, colors.black, bgcolor)
     scoreTextRect = scoreText.get_rect()
     scoreTextRect.centerx,scoreTextRect.centery = screen.get_rect().centerx, y
     screen.blit(scoreText, scoreTextRect)
@@ -150,17 +136,14 @@ def pause_screen(score):
                         resetText = mainFont.render(resetStr, 1, (255, 0, 0))
                     screen.blit(resetText, (WINDOWWIDTH/3, incrementy - 15))
                 elif event.key in [ord('j'), ord('J')]:
-                    gd.colors = list(gd.normalColors)
+                    colors.reset()
                     print_pause_blocks(incrementy)
                 elif event.key in [ord('k'), ord('K')]:
-                    for i in range(2, len(gd.colors)):
-                        gd.colors[i] = gd.colors[1]
+                    for i in range(len(colors.colors)):
+                        colors.colors[i] = colors.white
                     print_pause_blocks(incrementy)
                 elif event.key in [ord('l'), ord('L')]:
-                    for i in range(2, len(gd.colors)):
-                        gd.colors[i] = (random.randrange(1, 255),
-                                        random.randrange(1, 255),
-                                        random.randrange(1, 255))
+                    colors.randomize()
                     print_pause_blocks(incrementy)
                 elif event.key in [ord('q'), ord('Q')]:
                     pygame.quit()
@@ -200,7 +183,7 @@ def spawn_blocks(curBlock):
     if not curBlock[0]:
         new_number = get_block_num()
         text = blockFont.render(str(new_number), False,
-                                gd.colors[0], gd.colors[new_number])
+                                colors.black, colors.colors[new_number - 1])
         x_location = midCol * BLOCKSIZE
         curBlock[0] = new_number
         curBlock[1] = pygame.Rect(x_location, 0, BLOCKSIZE, BLOCKSIZE)
@@ -212,9 +195,9 @@ def print_block(block):
     """Prints the given block to the screen
     """
     if block[0] == 0: return
-    pygame.draw.rect(window, gd.colors[block[0]], block[1])
+    pygame.draw.rect(window, colors.colors[block[0] - 1], block[1])
     blockNum = blockFont.render(str(block[0]), False,
-                                gd.colors[0], gd.colors[block[0]])
+                                colors.black, colors.colors[block[0] - 1])
     block[2].centerx = block[1].centerx
     block[2].centery = block[1].centery
     screen.blit(blockNum, block[2])
@@ -399,15 +382,15 @@ def main():
                     gameSpeed = 40
 
         # Draw the background
-        window.fill(gd.colors[0])
+        window.fill(colors.black)
         menu_dimensions = ( BLOCK_AREA_WIDTH,
                             0,
                             WINDOWWIDTH - BLOCK_AREA_WIDTH,
                             WINDOWHEIGHT, )
                             
-        pygame.draw.rect(window, gd.colors[-1], menu_dimensions)
+        pygame.draw.rect(window, colors.silver, menu_dimensions)
         for i in range(0, BLOCK_AREA_WIDTH, BLOCKSIZE):
-            pygame.draw.line(window, gd.colors[8], (i, 0),
+            pygame.draw.line(window, colors.silver, (i, 0),
                              (i,BLOCK_AREA_HEIGHT), 1)
 
         # Spawn new blocks
