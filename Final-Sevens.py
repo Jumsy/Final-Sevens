@@ -47,12 +47,11 @@ def pause_screen(score):
         '''
         tinyBlock = BLOCKSIZE * (3./4.)
         xOffset = int(WINDOWWIDTH / 15)
-        for i in [1, 2, 3, 4, 5, 7]:
+        for i in [1, 2, 3, 4, 5, 7]: # All the valid block numbers
             x = xOffset + (i * (3./4.) * (WINDOWWIDTH / len(colors.colors)))
             colorRect = pygame.Rect(x, y, tinyBlock, tinyBlock)
             pygame.draw.rect(window, colors.colors[i-1], colorRect)
 
-    bgcolor = (220, 220, 220)
     pause = True
     reset = False
     pauseText = [ 'GAME PAUSED',
@@ -72,12 +71,12 @@ def pause_screen(score):
     horizontal = WINDOWWIDTH - (2 * x)
     vertical = WINDOWHEIGHT - (1.2 * y)
 
-    pygame.draw.rect(window, bgcolor, (x, y, horizontal, vertical))
+    pygame.draw.rect(window, colors.silver, (x, y, horizontal, vertical))
 
     incrementy = y + int(WINDOWHEIGHT / 30)
 
     for line in pauseText:
-        text = mainFont.render(line, False, colors.black, bgcolor)
+        text = mainFont.render(line, False, colors.black, colors.silver)
         textRect = text.get_rect()
         textRect.centerx = screen.get_rect().centerx
         textRect.centery = incrementy
@@ -88,7 +87,8 @@ def pause_screen(score):
 
     y = int(WINDOWHEIGHT / 10)
     scoreString = 'Score: ' + str(score)
-    scoreText = blockFont.render(scoreString, False, colors.black, bgcolor)
+    scoreText = blockFont.render(scoreString, False,
+                                 colors.black, colors.silver)
     scoreTextRect = scoreText.get_rect()
     scoreTextRect.centerx,scoreTextRect.centery = screen.get_rect().centerx, y
     screen.blit(scoreText, scoreTextRect)
@@ -103,7 +103,7 @@ def pause_screen(score):
                     resetStr = "RESET IS ACTIVE!"
                     if reset:
                         reset = False
-                        resetText = mainFont.render(resetStr, 1, bgcolor)
+                        resetText = mainFont.render(resetStr, 1, colors.silver)
                     else:
                         reset = True
                         resetText = mainFont.render(resetStr, 1, (255, 0, 0))
@@ -112,8 +112,7 @@ def pause_screen(score):
                     colors.reset()
                     print_pause_blocks(incrementy)
                 elif event.key in [ord('k'), ord('K')]:
-                    for i in range(len(colors.colors)):
-                        colors.colors[i] = colors.white
+                    colors.make_uniform()
                     print_pause_blocks(incrementy)
                 elif event.key in [ord('l'), ord('L')]:
                     colors.randomize()
@@ -130,7 +129,8 @@ def pause_screen(score):
 def get_block_num():
     '''
     This function is called for each block when it is created.
-    It attempts to keep a reasonable distribution of block numbers.
+    Lower block numbers seem to be more useful, so spawn more often.
+    7's should be rare enough that they're problematic.
     '''
     randNum = random.randrange(1, 101)
     if randNum < 33:
@@ -149,18 +149,19 @@ def get_block_num():
 def spawn_blocks(curBlock):
     """Creates a new curBlock if one doesn't already exist.
     """
+    if curBlock[0]:
+        return curBlock
 
     windowCenter = BLOCK_AREA_WIDTH / 2
     midCol = int(COLS/2)
 
-    if not curBlock[0]:
-        new_number = get_block_num()
-        text = blockFont.render(str(new_number), False,
-                                colors.black, colors.colors[new_number - 1])
-        x_location = midCol * BLOCKSIZE
-        curBlock[0] = new_number
-        curBlock[1] = pygame.Rect(x_location, 0, BLOCKSIZE, BLOCKSIZE)
-        curBlock[2] = text.get_rect()
+    new_number = get_block_num()
+    text = blockFont.render(str(new_number), False,
+                            colors.black, colors.colors[new_number - 1])
+    x_location = midCol * BLOCKSIZE
+    curBlock[0] = new_number
+    curBlock[1] = pygame.Rect(x_location, 0, BLOCKSIZE, BLOCKSIZE)
+    curBlock[2] = text.get_rect()
 
     return curBlock 
 
@@ -327,7 +328,7 @@ def setup_blocks(cols, rows):
 
 def main():
     score = 0
-    gameSpeed = 40
+    gameSpeed = 4
     pause_screen(score)
 
     curBlock, botBlocks = setup_blocks(ROWS, COLS)

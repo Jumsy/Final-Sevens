@@ -15,6 +15,7 @@ blocked.
 BUGS
 
 TODO
+ *Remove Score from the pause screen at add in on the right-side menu
  *Modify curBlock so that it is a cluster of blocks. It should work the
   same as it does currently.
  *Write an improved class to handle colors. The class should have

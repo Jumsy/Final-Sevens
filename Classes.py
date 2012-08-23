@@ -20,6 +20,10 @@ class Colors:
 
         # A copy of the colors list for resetting it back to normal when changed
         self.normalColors = list(self.colors)
+    
+    def make_uniform(self, color=(255, 255, 255)):
+        for i in range(len(self.colors)):
+           self.colors[i] = color
 
     def randomize(self):
         for i in range(len(self.colors)):
@@ -34,5 +38,9 @@ class Colors:
 class Shape:
     """The player-controlled shape
     """
-    pass
+    def __init__(self):
+        self.exists = False
+        self.blocks = []
 
+    def get_printable_blocks(self):
+        return [block for block in self.blocks]
