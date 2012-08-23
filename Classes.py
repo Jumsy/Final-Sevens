@@ -42,5 +42,22 @@ class Shape:
         self.exists = False
         self.blocks = []
 
+    def set_new(self, *blocks):
+        self.exists = True
+        for block in blocks:
+            self.blocks.append(block)
+
+    def delete(self):
+        self.exists = False
+        self.blocks = []
+
     def get_printable_blocks(self):
         return [block for block in self.blocks]
+
+    def move(self, dimension, dir):
+        if dimension == 'x':
+            for block in self.blocks:
+                block[1].centerx += dir
+        elif dimension == 'y':
+            for block in self.blocks:
+                block[1].centery += dir

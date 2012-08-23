@@ -149,7 +149,7 @@ def get_block_num():
 def spawn_blocks(curBlock):
     """Creates a new curBlock if one doesn't already exist.
     """
-    if curBlock[0]:
+    if curBlock.exists:
         return curBlock
 
     windowCenter = BLOCK_AREA_WIDTH / 2
@@ -159,9 +159,9 @@ def spawn_blocks(curBlock):
     text = blockFont.render(str(new_number), False,
                             colors.black, colors.colors[new_number - 1])
     x_location = midCol * BLOCKSIZE
-    curBlock[0] = new_number
-    curBlock[1] = pygame.Rect(x_location, 0, BLOCKSIZE, BLOCKSIZE)
-    curBlock[2] = text.get_rect()
+    block = [new_number, pygame.Rect(x_location, 0, BLOCKSIZE, BLOCKSIZE),
+             text.get_rect()]
+    curBlock.set_new(block)
 
     return curBlock 
 
@@ -237,31 +237,33 @@ def move_curBlock(curBlock, botBlocks, moveSide):
     """
 
     scoreBlock = False
-    if not curBlock[0]:
+    if not curBlock.exists:
         return curBlock, botBlocks, scoreBlock
 
+    block = curBlock.get_printable_blocks()[0]
+
     if moveSide:
-        target = curBlock[1].centerx + moveSide
+        target = block[1].centerx + moveSide
         if target > 0 and target < BLOCK_AREA_WIDTH:
             tarCol = botBlocks[int(target / BLOCKSIZE)]
             # The distance to check for an overlap in check_overlap()
             dist = BLOCKSIZE - MOVESPEED
-            if not check_overlap([target, curBlock[1].centery], tarCol, dist):
-                curBlock[1].centerx = target
+            if not check_overlap([target, block[1].centery], tarCol, dist):
+                curBlock.move('x', moveSide)
 
-    row = int(curBlock[1].top / BLOCKSIZE) - 1
-    col = int(curBlock[1].left / BLOCKSIZE)
+    row = int(block[1].top / BLOCKSIZE) - 1
+    col = int(block[1].left / BLOCKSIZE)
 
-    newLoc = [curBlock[1].centerx, curBlock[1].centery + BLOCKSIZE]
+    newLoc = [block[1].centerx, block[1].centery + BLOCKSIZE]
     botCol = botBlocks[col]
 
-    if curBlock[1].bottom == BLOCK_AREA_HEIGHT or botBlocks[col][row + 1][0]:
-        botBlocks[col][row] = curBlock[:]
-        scoreBlock = curBlock[:]
-        curBlock[0] = 0
+    if block[1].bottom == BLOCK_AREA_HEIGHT or botBlocks[col][row + 1][0]:
+        botBlocks[col][row] = curBlock.get_printable_blocks()[0]
+        scoreBlock = curBlock.get_printable_blocks()[0]
+        curBlock.delete()
         return curBlock, botBlocks, scoreBlock
 
-    curBlock[1].centery += MOVESPEED
+    curBlock.move('y', MOVESPEED)
 
     return curBlock, botBlocks, scoreBlock
 
@@ -321,7 +323,7 @@ def setup_blocks(cols, rows):
 
     # Block format [number, rect, number rect]
     blockf = [0, None, None]
-    curBlock = blockf[:]
+    curBlock = Shape()
     botBlocks = [ [ blockf[:] for i in range(cols) ] for j in range(rows) ]
     
     return curBlock, botBlocks
@@ -374,8 +376,7 @@ def main():
         scoreBlocks = []
         for col in botBlocks:
             col, tmp = move_blocks(col)
-            if tmp: scoreBlocks.append(tmp[:])
-
+            if tmp: scoreBlocks.append(tmp)
         # Move player controlled block
         curBlock, botBlocks, tmp = move_curBlock(curBlock, botBlocks, moveSide)
         if tmp: scoreBlocks.append(tmp[:])
@@ -385,7 +386,7 @@ def main():
             botBlocks, score = score_check(botBlocks, score, block)
 
         # Add all the blocks to one list which is passed to a print function
-        allBlocks = [curBlock]
+        allBlocks = curBlock.get_printable_blocks()
         allBlocks.extend(block for line in botBlocks for block in line)
         map(print_block, allBlocks)
         pygame.display.update()
