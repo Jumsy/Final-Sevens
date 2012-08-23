@@ -328,7 +328,7 @@ def setup_blocks(cols, rows):
 
 def main():
     score = 0
-    gameSpeed = 4
+    gameSpeed = originalGameSpeed = 40
     pause_screen(score)
 
     curBlock, botBlocks = setup_blocks(ROWS, COLS)
@@ -353,7 +353,7 @@ def main():
                         curBlock, botBlocks = setup_blocks(ROWS, COLS,)
             elif event.type == KEYUP:
                 if event.key in [K_DOWN, ord('s'), ord('S')]:
-                    gameSpeed = 40
+                    gameSpeed = originalGameSpeed
 
         # Draw the background
         window.fill(colors.black)
