@@ -6,8 +6,6 @@ Dependancies:
 
 To run:
  Type 'python Final-Sevens.py' on the command line.
- 
- For information on arguments use 'python Final-Sevens.py -h'
 
 In this game numbered blocks fall one at a time from the top of the screen.
 When three blocks in a row/column add up to 7 or 21, they are destroyed and
@@ -15,12 +13,13 @@ the player's score increases. The game ends when the block spawner becomes
 blocked.
 
 BUGS
- * Some values for the screen size can cause errors later in the program
-   It seems that the problem is caused when the y value is too small
-   relative to the x value. I should find out how small is 'too small'
-   and see why this error wasn't caught earlier.
 
 TODO
+ *Modify curBlock so that it is a cluster of blocks. It should work the
+  same as it does currently.
+ *Write an improved class to handle colors. The class should have
+  functions for randomizing colors, resetting colors, etc.
+ *The lines in the background should be more subtle
  *I could rewrite the program to avoid the use of sys.exit() and totally
   remove the sys import.
 
@@ -30,4 +29,3 @@ FEATURES
    Hard mode - blocks are all white
    Random mode - blocks are all given random colors
  *Reset blocks during the game to restart (also resets score)
- *Changeable screen size
