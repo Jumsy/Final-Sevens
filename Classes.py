@@ -18,7 +18,7 @@ class Colors:
                         (0, 255, 0),      # Lime
                       ]
 
-        # A copy of the colors list for resetting it back to normal when changed
+        # A copy of the colors for resetting it back to normal when changed
         self.normalColors = list(self.colors)
     
     def make_uniform(self, color=(255, 255, 255)):
@@ -42,17 +42,19 @@ class Shape:
         self.exists = False
         self.blocks = []
 
-    def set_new(self, *blocks):
+    def set_new(self, blocks):
         self.exists = True
-        for block in blocks:
-            self.blocks.append(block)
+        self.blocks = blocks[:]
+
+    def rotate(self):
+        pass
 
     def delete(self):
         self.exists = False
         self.blocks = []
 
     def get_printable_blocks(self):
-        return [block for block in self.blocks]
+        return [block[:] for block in self.blocks]
 
     def move(self, dimension, dir):
         if dimension == 'x':

@@ -152,16 +152,30 @@ def spawn_blocks(curBlock):
     if curBlock.exists:
         return curBlock
 
-    windowCenter = BLOCK_AREA_WIDTH / 2
-    midCol = int(COLS/2)
+    offsets = [ [ [0, 0] ], # Single block
+                [ [0, 0], [BLOCKSIZE, 0] ], # Horizontal pair
+                [ [0, 0], [0, BLOCKSIZE] ], # Vertical pair
+                [ [0, 0], [BLOCKSIZE, 0], [BLOCKSIZE, BLOCKSIZE] ], # 3-J
+                [ [0, 0], [0, BLOCKSIZE], [BLOCKSIZE, BLOCKSIZE] ], # 3-L
+              ]
 
-    new_number = get_block_num()
-    text = blockFont.render(str(new_number), False,
-                            colors.black, colors.colors[new_number - 1])
-    x_location = midCol * BLOCKSIZE
-    block = [new_number, pygame.Rect(x_location, 0, BLOCKSIZE, BLOCKSIZE),
-             text.get_rect()]
-    curBlock.set_new(block)
+    blockOffset = random.choice(offsets)
+    blocks = []
+
+    midCol = int(COLS/2)
+    x_start = midCol * BLOCKSIZE
+    y_start = 0
+
+    for offset in blockOffset:
+        block = [get_block_num()]
+        text = blockFont.render(str(block[0]), False,
+                                colors.black, colors.colors[block[0] - 1])
+        block.append(pygame.Rect(x_start + offset[0], y_start + offset[1],
+                                 BLOCKSIZE, BLOCKSIZE))
+        block.append(text.get_rect())
+        blocks.append(block)
+
+    curBlock.set_new(blocks)
 
     return curBlock 
 
@@ -190,10 +204,10 @@ def check_overlap(loc, blocks, yrange=0):
     return False
 
 def move_blocks(blocks):
-    """This function takes a list of blocks and moves them all according 
-    to their given directions. botBlocks is given to this function one
-    column at a time and every block in the column is moved downwards until
-    they hit the bottom of the screen or another block.
+    """This function takes a list of blocks and moves them all downwards.
+    botBlocks is given to this function one column at a time and every
+    block in the column is moved until they hit the bottom of the screen
+    or another block.
     Each location in the given list represents a location on the board. When
     a block has moved past the board location that the block's location in
     the list references, then the block must be moved within its list.
@@ -232,40 +246,53 @@ def move_curBlock(curBlock, botBlocks, moveSide):
     """This function moves the player-controlled curBlock downwards until
     it hits the bottom of the screen or another block. If the player wishes
     to move right or left, the argument 'moveSide' will reflect the direction.
-    If the curBlock stops, then it is returned as scoreBlock so that the 
-    score function can see whether it needs to be destroyed.
+    If the curBlock stops, then its component blocks are returned as
+    scoreBlocks so that they can get checked by score function to determine
+    whether they need to be destroyed.
+    This function first does horizontal movement, then vertical.
     """
 
-    scoreBlock = False
+    scoreBlocks = False
     if not curBlock.exists:
-        return curBlock, botBlocks, scoreBlock
+        return curBlock, botBlocks, scoreBlocks
 
-    block = curBlock.get_printable_blocks()[0]
+    blocks = curBlock.get_printable_blocks()
 
     if moveSide:
-        target = block[1].centerx + moveSide
-        if target > 0 and target < BLOCK_AREA_WIDTH:
+        toMove = True
+        for block in blocks:
+            target = block[1].centerx + moveSide
+            if target < 0 or target > BLOCK_AREA_WIDTH:
+                toMove = False
+                break
             tarCol = botBlocks[int(target / BLOCKSIZE)]
             # The distance to check for an overlap in check_overlap()
             dist = BLOCKSIZE - MOVESPEED
-            if not check_overlap([target, block[1].centery], tarCol, dist):
-                curBlock.move('x', moveSide)
+            if check_overlap([target, block[1].centery], tarCol, dist):
+                toMove = False
+                break
+        if toMove:
+            curBlock.move('x', moveSide)
 
-    row = int(block[1].top / BLOCKSIZE) - 1
-    col = int(block[1].left / BLOCKSIZE)
+    toStop = False
+    for block in blocks:
+        row = int(block[1].top / BLOCKSIZE) - 1
+        col = int(block[1].left / BLOCKSIZE)
+        if block[1].bottom == BLOCK_AREA_HEIGHT or botBlocks[col][row + 1][0]:
+            toStop = True
+            break
 
-    newLoc = [block[1].centerx, block[1].centery + BLOCKSIZE]
-    botCol = botBlocks[col]
-
-    if block[1].bottom == BLOCK_AREA_HEIGHT or botBlocks[col][row + 1][0]:
-        botBlocks[col][row] = curBlock.get_printable_blocks()[0]
-        scoreBlock = curBlock.get_printable_blocks()[0]
+    if toStop:
+        for block in blocks:
+            row = int(block[1].top / BLOCKSIZE) - 1
+            col = int(block[1].left / BLOCKSIZE)
+            botBlocks[col][row] = block
+        scoreBlocks = curBlock.get_printable_blocks()
         curBlock.delete()
-        return curBlock, botBlocks, scoreBlock
+    else:
+        curBlock.move('y', MOVESPEED)
 
-    curBlock.move('y', MOVESPEED)
-
-    return curBlock, botBlocks, scoreBlock
+    return curBlock, botBlocks, scoreBlocks
 
 def score_check(botBlocks, score, newBlock):
     """This function takes a recently fallen block as newBlock
@@ -377,9 +404,10 @@ def main():
         for col in botBlocks:
             col, tmp = move_blocks(col)
             if tmp: scoreBlocks.append(tmp)
+
         # Move player controlled block
         curBlock, botBlocks, tmp = move_curBlock(curBlock, botBlocks, moveSide)
-        if tmp: scoreBlocks.append(tmp[:])
+        if tmp: scoreBlocks.extend(block for block in tmp)
 
         # Update score and get rid of any groups totaling 7 or 21
         for block in scoreBlocks:
