@@ -24,8 +24,39 @@ window = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
 pygame.display.set_caption('Final Sevens')
 screen = pygame.display.get_surface()
 
-mainFont = pygame.font.SysFont(None, BLOCKSIZE) # Pause menu text
-blockFont = pygame.font.SysFont(None, int(BLOCKSIZE*1.4)) # Block number/pause menu score
+# Pause menu text
+mainFont = pygame.font.SysFont(None, BLOCKSIZE)
+# Block number/pause menu score
+blockFont = pygame.font.SysFont(None, int(BLOCKSIZE*1.4))
+
+class Colors:
+    def __init__(self):
+        # Static colors
+        self.white = (255, 255, 255)
+        self.black = (0, 0, 0)
+        self.silver = (192, 192, 192)
+
+        # The color list for mapping numbers to colors. Changes.
+        self.colors = [ (255, 255, 255),  # White
+                        (255, 0, 0),      # Red
+                        (0, 128, 0),      # Green
+                        (0, 0, 255),      # Blue
+                        (255, 0, 255),    # Fuchsia
+                        (255, 255, 0),    # Yellow
+                        (0, 255, 0),      # Lime
+                      ]
+
+        # A copy of the colors list for resetting it back to normal when changed
+        self.normalColors = list(colors)
+
+    def randomize(self):
+        for i in range(len(self.colors)):
+            self.colors[i] = (random.randrange(1, 256),
+                              random.randrange(1, 256),
+                              random.randrange(1, 256),)
+
+    def reset(self):
+        self.colors = self.normalcolors[:]
 
 class gd: # Global data
     # The color list used by the program in determining what color to use
@@ -174,7 +205,6 @@ def spawn_blocks(curBlock):
         curBlock[0] = new_number
         curBlock[1] = pygame.Rect(x_location, 0, BLOCKSIZE, BLOCKSIZE)
         curBlock[2] = text.get_rect()
-        curBlock[3] = 'down'
 
     return curBlock 
 
@@ -217,21 +247,21 @@ def move_blocks(blocks):
 
     scoreBlock = False
     windowCenter = BLOCK_AREA_WIDTH / 2
-    directionMap = {'down':[0, MOVESPEED]}
+    direction = [0, MOVESPEED]
 
     for block in blocks:
         if not block[0] or block[1].bottom >= BLOCK_AREA_HEIGHT:
             continue
 
         # This assumes that the blocks are moving at 1/10 of the block's size
-        targetx = block[1].centerx + directionMap[block[3]][0] * 10
-        targety = block[1].centery + directionMap[block[3]][1] * 10
+        targetx = block[1].centerx + direction[0] * 10
+        targety = block[1].centery + direction[1] * 10
 
         if check_overlap([targetx, targety], blocks):
             continue
 
-        block[1].centerx += directionMap[block[3]][0]
-        block[1].centery += directionMap[block[3]][1]
+        block[1].centerx += direction[0]
+        block[1].centery += direction[1]
 
         if not bool(block[1].top % BLOCKSIZE):
             scoreBlock = block[:]
@@ -332,8 +362,8 @@ def setup_blocks(cols, rows):
     blocks, but later it is used to reset the game without quitting.
     """
 
-    # Block format [number, rect, number rect, direction]
-    blockf = [0, None, None, None]
+    # Block format [number, rect, number rect]
+    blockf = [0, None, None]
     curBlock = blockf[:]
     botBlocks = [ [ blockf[:] for i in range(cols) ] for j in range(rows) ]
     
