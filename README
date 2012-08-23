@@ -15,9 +15,9 @@ blocked.
 BUGS
 
 TODO
+ *Add a spot on the right-side menu for displaying the next shape
+ *Clean up the pause screen function
  *Remove Score from the pause screen at add in on the right-side menu
- *Modify curBlock so that it is a cluster of blocks. It should work the
-  same as it does currently.
  *I could rewrite the program to avoid the use of sys.exit() and totally
   remove the sys import.
 
