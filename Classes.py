@@ -44,10 +44,53 @@ class Shape:
 
     def set_new(self, blocks):
         self.exists = True
-        self.blocks = blocks[:]
+        self.blocks = blocks
+
+    def sync(self, newPositions):
+        for i, position in enumerate(newPositions):
+            self.blocks[i][1].centerx = position[0]
+            self.blocks[i][1].centery = position[1]
 
     def rotate(self):
-        pass
+        """This function extracts the coordinate data from each block
+        then gets the edge locations of a square encompassing every
+        block. The coordinates are rotated within this square and returned.
+        """
+        if not self.blocks: return
+
+        blocks = [ [block[1].centerx, block[1].centery] for block in self.blocks ]
+        blockWidth = self.blocks[0][1].right - self.blocks[0][1].left
+
+        limit = 100000
+        left = max
+        right = 0
+        bottom = 0
+        top = limit 
+
+        for block in blocks:
+            left = min(left, block[0] - (blockWidth/2))
+            right = max(right, block[0] + (blockWidth/2))
+            bottom = max(bottom, block[1] + (blockWidth/2))
+            top = min(top, block[1] - (blockWidth/2))
+
+        height = top - bottom
+        width = right - left
+        
+        height = width = max(height, width)
+
+        left = right - width
+        top = bottom - height
+        
+        if left < 0 or top < 0:
+            return
+
+        for block in blocks:
+            dx = (block[0] - left)
+            dy = (block[1] - top)
+            block[0] = right - dy
+            block[1] = top + dx
+
+        return blocks
 
     def delete(self):
         self.exists = False

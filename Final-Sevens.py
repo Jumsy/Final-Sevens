@@ -14,7 +14,8 @@ BLOCKSIZE = 20
 BLOCK_AREA_WIDTH = 280
 BLOCK_AREA_HEIGHT = 560
 
-WINDOWWIDTH = BLOCK_AREA_WIDTH + 100
+MenuSize = 0
+WINDOWWIDTH = BLOCK_AREA_WIDTH + MenuSize
 WINDOWHEIGHT = BLOCK_AREA_HEIGHT
 
 ROWS = BLOCK_AREA_HEIGHT / BLOCKSIZE
@@ -47,7 +48,7 @@ def pause_screen(score):
         '''
         tinyBlock = BLOCKSIZE * (3./4.)
         xOffset = int(WINDOWWIDTH / 15)
-        for i in [1, 2, 3, 4, 5, 7]: # All the valid block numbers
+        for i in range(1, len(colors.colors) + 1):
             x = xOffset + (i * (3./4.) * (WINDOWWIDTH / len(colors.colors)))
             colorRect = pygame.Rect(x, y, tinyBlock, tinyBlock)
             pygame.draw.rect(window, colors.colors[i-1], colorRect)
@@ -133,15 +134,15 @@ def get_block_num():
     7's should be rare enough that they're problematic.
     '''
     randNum = random.randrange(1, 101)
-    if randNum < 33:
+    if randNum < 25:
         return 1
-    elif randNum < 60:
+    elif randNum < 50:
         return 2
-    elif randNum < 75:
+    elif randNum < 80:
         return 3
-    elif randNum < 85:
+    elif randNum < 90:
         return 4
-    elif randNum < 97:
+    elif randNum < 98:
         return 5
     else:
         return 7
@@ -152,11 +153,24 @@ def spawn_blocks(curBlock):
     if curBlock.exists:
         return curBlock
 
-    offsets = [ [ [0, 0] ], # Single block
-                [ [0, 0], [BLOCKSIZE, 0] ], # Horizontal pair
-                [ [0, 0], [0, BLOCKSIZE] ], # Vertical pair
-                [ [0, 0], [BLOCKSIZE, 0], [BLOCKSIZE, BLOCKSIZE] ], # 3-J
-                [ [0, 0], [0, BLOCKSIZE], [BLOCKSIZE, BLOCKSIZE] ], # 3-L
+    one = BLOCKSIZE
+    two = 2*BLOCKSIZE
+    three = 3*BLOCKSIZE
+
+    offsets = [ 
+                [ [0, 0] ],                                    # Single block
+                [ [0, 0], [one, 0] ],                          # Horizontal pair
+                [ [0, 0], [0, one] ],                          # Vertical pair
+                [ [0, 0], [one, 0], [one, one] ],              # 3-J
+                [ [0, 0], [0, one], [one, one] ],              # 3-L
+                [ [0, 0], [0, one], [0, two] ],                # 3 line
+                ##### ^ Small pieces ## V Tetris-sized pieces #####
+                #[ [0, 0], [one, 0], [two, 0], [two, one] ],    # 4-L
+                #[ [0, one], [one, one], [two, one], [two, 0] ],# 4-L
+                #[ [0, 0], [0, one], [0, two], [one, one] ],    # T
+                #[ [0, 0], [0, one], [0, two], [0, three] ],    # 4 line
+                #[ [0, 0], [one, 0], [one, one], [two, one] ],  # Z
+                #[ [0, one], [one, one], [one, 0], [two, 0] ],  # S
               ]
 
     blockOffset = random.choice(offsets)
@@ -242,7 +256,7 @@ def move_blocks(blocks):
 
     return blocks, scoreBlock
 
-def move_curBlock(curBlock, botBlocks, moveSide):
+def move_curBlock(curBlock, botBlocks, moveSide, rotate):
     """This function moves the player-controlled curBlock downwards until
     it hits the bottom of the screen or another block. If the player wishes
     to move right or left, the argument 'moveSide' will reflect the direction.
@@ -257,6 +271,18 @@ def move_curBlock(curBlock, botBlocks, moveSide):
         return curBlock, botBlocks, scoreBlocks
 
     blocks = curBlock.get_printable_blocks()
+
+    if rotate:
+        toRotate = True
+        newPositions = curBlock.rotate()
+        if newPositions:
+            for block in newPositions:
+                tarCol = botBlocks[int(block[0] / BLOCKSIZE)]
+                if check_overlap(block, tarCol, BLOCKSIZE/2):
+                    toRotate = False
+                    break
+            if toRotate:
+                curBlock.sync(newPositions)
 
     if moveSide:
         toMove = True
@@ -336,7 +362,10 @@ def score_check(botBlocks, score, newBlock):
             scoreSum += block[0]
 
         if len(blockList) == 3 and (scoreSum == 7 or scoreSum == 21):
-            score += scoreSum
+            if scoreSum == 7:
+                score += 1
+            elif scoreSum == 21:
+                score += 50
             for block in blockList:
                 block[0] = 0
 
@@ -357,12 +386,15 @@ def setup_blocks(cols, rows):
 
 def main():
     score = 0
-    gameSpeed = originalGameSpeed = 40
+    slow = 40
+    fast = 320
+    gameSpeed = slow
     pause_screen(score)
 
     curBlock, botBlocks = setup_blocks(ROWS, COLS)
 
     while True:
+        rotate = False
         moveSide = 0
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -375,14 +407,16 @@ def main():
                 elif event.key in [K_RIGHT, ord('d'), ord('D')]:
                     moveSide = BLOCKSIZE
                 elif event.key in [K_DOWN, ord('s'), ord('S')]:
-                    gameSpeed = 120
+                    gameSpeed = fast
+                elif event.key in [K_UP, ord('w'), ord('W')]:
+                    rotate = True
                 elif event.key in [ord('p'), ord('P')]:
                     if pause_screen(score):
                         score = 0
                         curBlock, botBlocks = setup_blocks(ROWS, COLS,)
             elif event.type == KEYUP:
                 if event.key in [K_DOWN, ord('s'), ord('S')]:
-                    gameSpeed = originalGameSpeed
+                    gameSpeed = slow
 
         # Draw the background
         window.fill(colors.black)
@@ -396,17 +430,17 @@ def main():
             pygame.draw.line(window, colors.off_black, (i, 0),
                              (i,BLOCK_AREA_HEIGHT), 1)
 
-        # Spawn new blocks
+        # Spawn new falling blocks
         curBlock = spawn_blocks(curBlock) 
 
-        # Move blocks
+        # Move fallen blocks
         scoreBlocks = []
         for col in botBlocks:
             col, tmp = move_blocks(col)
             if tmp: scoreBlocks.append(tmp)
 
         # Move player controlled block
-        curBlock, botBlocks, tmp = move_curBlock(curBlock, botBlocks, moveSide)
+        curBlock, botBlocks, tmp = move_curBlock(curBlock, botBlocks, moveSide, rotate)
         if tmp: scoreBlocks.extend(block for block in tmp)
 
         # Update score and get rid of any groups totaling 7 or 21

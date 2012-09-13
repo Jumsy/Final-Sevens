@@ -15,12 +15,14 @@ blocked.
 BUGS
 
 TODO
- *Enable rotation of the falling block cluster
+ *Refactor
  *Add a spot on the right-side menu for displaying the next shape
  *Clean up the pause screen function
  *Remove Score from the pause screen at add in on the right-side menu
  *I could rewrite the program to avoid the use of sys.exit() and totally
   remove the sys import.
+ *Have variable difficulty where the number blocks have to add up to is
+  increased. Also increase the numbers on blocks spawned
 
 FEATURES
  *3 modes of block color:
